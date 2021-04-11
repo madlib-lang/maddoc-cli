@@ -1,0 +1,26 @@
+import IO from "IO"
+import { andDo } from "Monad"
+import { Wish, fulfill } from "Wish"
+import { defaultIOUtils } from "./IOUtils"
+import {
+  Config,
+  buildDocumentation,
+  generateConfiguration,
+  pathToDocument,
+  generateJson
+} from "./Build"
+
+
+main :: Config -> Wish String String
+main = (config) => pipe(
+  generateJson,
+  andDo(buildDocumentation(config))
+)(config)
+
+fulfill(
+  IO.log,
+  (path) => IO.log(`Running documentation generation for the madlib modules in '${path}'`),
+  pathToDocument(defaultIOUtils)
+)
+
+fulfill(IO.log, IO.log, chain(main, generateConfiguration))

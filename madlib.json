@@ -1,0 +1,8 @@
+{
+  "name": "maddoc-cli",
+  "version": "0.0.1",
+  "bin": "src/Main.mad",
+  "dependencies": {
+    "MadDoc": "https://github.com/madlib-lang/maddoc/archive/refs/heads/master.zip"
+  }
+}

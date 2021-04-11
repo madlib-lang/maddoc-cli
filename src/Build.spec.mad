@@ -1,0 +1,92 @@
+import { test, assertEquals, AssertionError } from "TestTools"
+import { exec } from "System"
+import { exists } from "FileSystem"
+import { chainRej, mapRej, fulfill, Wish } from "Wish"
+import { andDo } from "Monad"
+import IO from "IO"
+
+import { IOUtils } from "./IOUtils"
+import {
+  pathToDocument,
+  madDocRootPath,
+  sassExecutablePath,
+  madDocSrcPath,
+  documentationTargetPath,
+  madDocMainPath
+} from "./Build"
+
+INITIAL_IOUTILS :: IOUtils
+INITIAL_IOUTILS = { getArgs: of([]), getExecutablePath: of("") }
+
+
+assertFileExists :: String -> Wish AssertionError String
+assertFileExists = (filePath) => pipe(
+  exists,
+  mapRej((_) => AssertionError("OK", `${filePath} not found`))
+)(filePath)
+
+test("MadDoc cli should work", (_) => pipe(
+  mapRej((_) => AssertionError("OK", "maddoc exited with non 0 code")),
+  andDo(assertFileExists("./src/documentation.json")),
+  andDo(assertFileExists(".docs/bundle.js")),
+  andDo(assertFileExists(".docs/index.html")),
+  andDo(assertFileExists(".docs/styles/main.css"))
+)(exec("COVERAGE_MODE=off madlib run ./src/Main.mad src")))
+
+test("pathToDocument - arg is set", (_) => pipe(
+  pathToDocument,
+  mapRej((_) => AssertionError(false, true)),
+  chain(assertEquals($, "/path/to/document"))
+)({ ...INITIAL_IOUTILS, getArgs: of(["/path/to/document"]) }))
+
+test("pathToDocument - arg is not set", (_) => pipe(
+  pathToDocument,
+  chainRej(assertEquals($, "You must give a path to the .mad files to document!"))
+)({ ...INITIAL_IOUTILS, getArgs: of([]) }))
+
+test("madDocRootPath - should return the root of maddoc project", (_) => pipe(
+  madDocRootPath,
+  mapRej((_) => AssertionError(false, true)),
+  chain(assertEquals($, "/home/madlib/maddoc-cli/madlib_modules/https___github_com_madlib_lang_maddoc_archive_refs_heads_master_zip"))
+)({ ...INITIAL_IOUTILS, getExecutablePath: of("/home/madlib/maddoc-cli/.run/Main.mjs") }))
+
+test("madDocRootPath - should return the root of maddoc project when installed as a dependency", (_) => pipe(
+  madDocRootPath,
+  mapRej((_) => AssertionError(false, true)),
+  chain(assertEquals($, "/home/madlib/my-package/madlib_modules/https___github_com_madlib_lang_maddoc_archive_refs_heads_master_zip"))
+)({ ...INITIAL_IOUTILS, getExecutablePath: of("/home/madlib/my-package/madlib_modules/https___github_com_madlib_lang_maddoc_cli_archive_refs_heads_master_zip/.run/Main.mjs") }))
+
+test("sassExecutablePath - should return the local sass install in node_modules if run locally", (_) => pipe(
+  sassExecutablePath,
+  mapRej((_) => AssertionError(false, true)),
+  chain(assertEquals($, "/home/madlib/maddoc-cli/node_modules/.bin/sass"))
+)({ ...INITIAL_IOUTILS, getExecutablePath: of("/home/madlib/maddoc-cli/.run/Main.mjs") }))
+
+test("sassExecutablePath - should return the local sass install in node_modules if run from a package", (_) => pipe(
+  sassExecutablePath,
+  mapRej((_) => AssertionError(false, true)),
+  chain(assertEquals($, "/home/madlib/my-package/node_modules/.bin/sass"))
+)({
+  ...INITIAL_IOUTILS,
+  getExecutablePath: of(
+    "/home/madlib/my-package/madlib_modules/https___github_com_madlib_lang_maddoc_archive_refs_heads_master_zip/.run/Main.mjs"
+  )
+}))
+
+test("madDocSrcPath - should return the path of the src folder from MadDoc", (_) => pipe(
+  madDocSrcPath,
+  mapRej((_) => AssertionError(false, true)),
+  chain(assertEquals($, "/home/madlib/maddoc-cli/madlib_modules/https___github_com_madlib_lang_maddoc_archive_refs_heads_master_zip/src"))
+)({ ...INITIAL_IOUTILS, getExecutablePath: of("/home/madlib/maddoc-cli/.run/Main.mjs") }))
+
+test("documentationTargetPath - should return the path for the documentation.json file", (_) => pipe(
+  documentationTargetPath,
+  mapRej((_) => AssertionError(false, true)),
+  chain(assertEquals($, "/home/madlib/maddoc-cli/madlib_modules/https___github_com_madlib_lang_maddoc_archive_refs_heads_master_zip/src/documentation.json"))
+)({ ...INITIAL_IOUTILS, getExecutablePath: of("/home/madlib/maddoc-cli/.run/Main.mjs") }))
+
+test("madDocMainPath - should return the path for the Main module of MadDoc", (_) => pipe(
+  madDocMainPath,
+  mapRej((_) => AssertionError(false, true)),
+  chain(assertEquals($, "/home/madlib/maddoc-cli/madlib_modules/https___github_com_madlib_lang_maddoc_archive_refs_heads_master_zip/src/Main.mad"))
+)({ ...INITIAL_IOUTILS, getExecutablePath: of("/home/madlib/maddoc-cli/.run/Main.mjs") }))
