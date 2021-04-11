@@ -97,17 +97,20 @@ export madDocMainPath = (ioUtils) => map(
 )
 
 sassPath :: IOUtils -> Wish String String
-sassPath = (ioUtils) => map(
+export sassPath = (ioUtils) => map(
   mappend($, "/styles/main.scss"),
   madDocSrcPath(ioUtils)
 )
 
-htmlSourcePath :: Wish String String
-htmlSourcePath = map(mappend($, "/index.html"), madDocSrcPath(defaultIOUtils))
+htmlSourcePath :: IOUtils -> Wish String String
+export htmlSourcePath = (ioUtils) => map(
+  mappend($, "/index.html"),
+  madDocSrcPath(ioUtils)
+)
 
 
-generateConfiguration :: Wish String Config
-export generateConfiguration = pipe(
+generateConfiguration :: IOUtils -> Wish String Config
+export generateConfiguration = (ioUtils) => pipe(
   parallel,
   map(where is [madMain, sassMain, htmlIndex, sassBin, docInput, docOutput]: {
     madlib: { input: madMain, output: JS_BUNDLE_PATH },
@@ -117,12 +120,12 @@ export generateConfiguration = pipe(
     documentationDotJson: { input: docInput, output: docOutput }
   })
 )([
-  madDocMainPath(defaultIOUtils),
-  sassPath(defaultIOUtils),
-  htmlSourcePath,
-  sassExecutablePath(defaultIOUtils),
-  pathToDocument(defaultIOUtils),
-  documentationTargetPath(defaultIOUtils)
+  madDocMainPath(ioUtils),
+  sassPath(ioUtils),
+  htmlSourcePath(ioUtils),
+  sassExecutablePath(ioUtils),
+  pathToDocument(ioUtils),
+  documentationTargetPath(ioUtils)
 ])
 
 

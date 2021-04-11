@@ -23,4 +23,4 @@ fulfill(
   pathToDocument(defaultIOUtils)
 )
 
-fulfill(IO.log, IO.log, chain(main, generateConfiguration))
+fulfill(IO.log, IO.log, chain(main, generateConfiguration(defaultIOUtils)))

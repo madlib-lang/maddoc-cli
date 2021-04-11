@@ -12,7 +12,10 @@ import {
   sassExecutablePath,
   madDocSrcPath,
   documentationTargetPath,
-  madDocMainPath
+  madDocMainPath,
+  sassPath,
+  htmlSourcePath,
+  generateConfiguration
 } from "./Build"
 
 INITIAL_IOUTILS :: IOUtils
@@ -90,3 +93,47 @@ test("madDocMainPath - should return the path for the Main module of MadDoc", (_
   mapRej((_) => AssertionError(false, true)),
   chain(assertEquals($, "/home/madlib/maddoc-cli/madlib_modules/https___github_com_madlib_lang_maddoc_archive_refs_heads_master_zip/src/Main.mad"))
 )({ ...INITIAL_IOUTILS, getExecutablePath: of("/home/madlib/maddoc-cli/.run/Main.mjs") }))
+
+test("sassPath - should return the path for the sass file to compile", (_) => pipe(
+  sassPath,
+  mapRej((_) => AssertionError(false, true)),
+  chain(assertEquals($, "/home/madlib/maddoc-cli/madlib_modules/https___github_com_madlib_lang_maddoc_archive_refs_heads_master_zip/src/styles/main.scss"))
+)({ ...INITIAL_IOUTILS, getExecutablePath: of("/home/madlib/maddoc-cli/.run/Main.mjs") }))
+
+test("htmlSourcePath - should return the path of index.html file to copy", (_) => pipe(
+  htmlSourcePath,
+  mapRej((_) => AssertionError(false, true)),
+  chain(assertEquals($, "/home/madlib/maddoc-cli/madlib_modules/https___github_com_madlib_lang_maddoc_archive_refs_heads_master_zip/src/index.html"))
+)({ ...INITIAL_IOUTILS, getExecutablePath: of("/home/madlib/maddoc-cli/.run/Main.mjs") }))
+
+test("generateConfiguration - should generate a correct Config with all paths", (_) => {
+  expected = {
+    madlib: {
+      input: "/home/madlib/maddoc-cli/madlib_modules/https___github_com_madlib_lang_maddoc_archive_refs_heads_master_zip/src/Main.mad",
+      output: ".docs/bundle.js"
+    },
+    styles: {
+      input: "/home/madlib/maddoc-cli/madlib_modules/https___github_com_madlib_lang_maddoc_archive_refs_heads_master_zip/src/styles/main.scss",
+      output: ".docs/styles/main.css"
+    },
+    html: {
+      input: "/home/madlib/maddoc-cli/madlib_modules/https___github_com_madlib_lang_maddoc_archive_refs_heads_master_zip/src/index.html",
+      output: ".docs/index.html"
+    },
+    sassExecutablePath: "/home/madlib/maddoc-cli/node_modules/.bin/sass",
+    documentationDotJson: {
+      input: "/path/to/document",
+      output: "/home/madlib/maddoc-cli/madlib_modules/https___github_com_madlib_lang_maddoc_archive_refs_heads_master_zip/src/documentation.json"
+    }
+  }
+
+  return pipe(
+    generateConfiguration,
+    mapRej((_) => AssertionError(false, true)),
+    chain(assertEquals($, expected))
+  )({
+    ...INITIAL_IOUTILS,
+    getExecutablePath: of("/home/madlib/maddoc-cli/.run/Main.mjs"),
+    getArgs: of(["/path/to/document"])
+  })
+})
