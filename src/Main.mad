@@ -13,8 +13,8 @@ import {
 
 main :: Config -> Wish String String
 main = (config) => pipe(
-  generateJson,
-  andDo(buildDocumentation(config))
+  generateJson(defaultIOUtils),
+  andDo(buildDocumentation(defaultIOUtils, config))
 )(config)
 
 fulfill(

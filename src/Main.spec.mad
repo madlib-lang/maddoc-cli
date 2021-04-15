@@ -1,0 +1,19 @@
+import { test, assertEquals, AssertionError } from "TestTools"
+import { exists } from "FileSystem"
+import { exec } from "System"
+import { bad, chainRej, mapRej, Wish } from "Wish"
+import { andDo } from "Monad"
+
+assertFileExists :: String -> Wish AssertionError String
+assertFileExists = (filePath) => pipe(
+  exists,
+  mapRej((_) => AssertionError("OK", `${filePath} not found`))
+)(filePath)
+
+test("MadDoc cli should work", (_) => pipe(
+  mapRej((_) => AssertionError("OK", "maddoc exited with non 0 code")),
+  andDo(assertFileExists("./src/documentation.json")),
+  andDo(assertFileExists(".docs/bundle.js")),
+  andDo(assertFileExists(".docs/index.html")),
+  andDo(assertFileExists(".docs/styles/main.css"))
+)(exec("madlib run ./src/Main.mad src")))

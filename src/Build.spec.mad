@@ -1,12 +1,12 @@
 import { test, assertEquals, AssertionError } from "TestTools"
-import { exec } from "System"
-import { exists } from "FileSystem"
-import { chainRej, mapRej, fulfill, Wish } from "Wish"
+import { exec, CommandError } from "System"
+import { bad, chainRej, mapRej, Wish } from "Wish"
 import { andDo } from "Monad"
 import IO from "IO"
 
 import { IOUtils } from "./IOUtils"
 import {
+  Config,
   pathToDocument,
   madDocRootPath,
   sassExecutablePath,
@@ -15,26 +15,42 @@ import {
   madDocMainPath,
   sassPath,
   htmlSourcePath,
-  generateConfiguration
+  generateConfiguration,
+  generateJson,
+  buildBundle,
+  buildSass,
+  copyHtml,
+  buildDocumentation
 } from "./Build"
 
 INITIAL_IOUTILS :: IOUtils
-INITIAL_IOUTILS = { getArgs: of([]), getExecutablePath: of("") }
+INITIAL_IOUTILS = {
+  getArgs: of([]),
+  getCurrentPath: of(""),
+  getExecutablePath: of(""),
+  exec: (x) => of(x)
+}
 
-
-assertFileExists :: String -> Wish AssertionError String
-assertFileExists = (filePath) => pipe(
-  exists,
-  mapRej((_) => AssertionError("OK", `${filePath} not found`))
-)(filePath)
-
-test("MadDoc cli should work", (_) => pipe(
-  mapRej((_) => AssertionError("OK", "maddoc exited with non 0 code")),
-  andDo(assertFileExists("./src/documentation.json")),
-  andDo(assertFileExists(".docs/bundle.js")),
-  andDo(assertFileExists(".docs/index.html")),
-  andDo(assertFileExists(".docs/styles/main.css"))
-)(exec("COVERAGE_MODE=off madlib run ./src/Main.mad src")))
+DEFAULT_CONFIG :: Config
+DEFAULT_CONFIG = {
+  madlib: {
+    input: "/home/madlib/maddoc-cli/madlib_modules/https___github_com_madlib_lang_maddoc_archive_refs_heads_master_zip/src/Main.mad",
+    output: ".docs/bundle.js"
+  },
+  styles: {
+    input: "/home/madlib/maddoc-cli/madlib_modules/https___github_com_madlib_lang_maddoc_archive_refs_heads_master_zip/src/styles/main.scss",
+    output: ".docs/styles/main.css"
+  },
+  html: {
+    input: "/home/madlib/maddoc-cli/madlib_modules/https___github_com_madlib_lang_maddoc_archive_refs_heads_master_zip/src/index.html",
+    output: ".docs/index.html"
+  },
+  sassExecutablePath: "/home/madlib/maddoc-cli/node_modules/.bin/sass",
+  documentationDotJson: {
+    input: "/path/to/document",
+    output: "/home/madlib/maddoc-cli/madlib_modules/https___github_com_madlib_lang_maddoc_archive_refs_heads_master_zip/src/documentation.json"
+  }
+}
 
 test("pathToDocument - arg is set", (_) => pipe(
   pathToDocument,
@@ -107,25 +123,7 @@ test("htmlSourcePath - should return the path of index.html file to copy", (_) =
 )({ ...INITIAL_IOUTILS, getExecutablePath: of("/home/madlib/maddoc-cli/.run/Main.mjs") }))
 
 test("generateConfiguration - should generate a correct Config with all paths", (_) => {
-  expected = {
-    madlib: {
-      input: "/home/madlib/maddoc-cli/madlib_modules/https___github_com_madlib_lang_maddoc_archive_refs_heads_master_zip/src/Main.mad",
-      output: ".docs/bundle.js"
-    },
-    styles: {
-      input: "/home/madlib/maddoc-cli/madlib_modules/https___github_com_madlib_lang_maddoc_archive_refs_heads_master_zip/src/styles/main.scss",
-      output: ".docs/styles/main.css"
-    },
-    html: {
-      input: "/home/madlib/maddoc-cli/madlib_modules/https___github_com_madlib_lang_maddoc_archive_refs_heads_master_zip/src/index.html",
-      output: ".docs/index.html"
-    },
-    sassExecutablePath: "/home/madlib/maddoc-cli/node_modules/.bin/sass",
-    documentationDotJson: {
-      input: "/path/to/document",
-      output: "/home/madlib/maddoc-cli/madlib_modules/https___github_com_madlib_lang_maddoc_archive_refs_heads_master_zip/src/documentation.json"
-    }
-  }
+  expected = DEFAULT_CONFIG
 
   return pipe(
     generateConfiguration,
@@ -136,4 +134,128 @@ test("generateConfiguration - should generate a correct Config with all paths", 
     getExecutablePath: of("/home/madlib/maddoc-cli/.run/Main.mjs"),
     getArgs: of(["/path/to/document"])
   })
+})
+
+test("generateJson - should call 'madlib doc' command with correct options", (_) => {
+  command = ""
+  expected = "madlib doc -i /path/to/document > /home/madlib/maddoc-cli/madlib_modules/https___github_com_madlib_lang_maddoc_archive_refs_heads_master_zip/src/documentation.json"
+
+  exec = (cmd) => {
+    command = cmd
+    return of("good")
+  }
+
+  return pipe(
+    generateJson({ ...INITIAL_IOUTILS, exec }),
+    mapRej((_) => AssertionError(false, true)),
+    chain((_) => assertEquals(command, expected))
+  )(DEFAULT_CONFIG)
+})
+
+test("generateJson - should reject if 'madlib doc' command fails", (_) => {
+  expected = "An error occured while generating the docs, here is the error from madlib:\nCould not generate doc"
+  exec = (cmd) => bad(CommandError(1, "Could not generate doc"))
+
+  return pipe(
+    generateJson({ ...INITIAL_IOUTILS, exec }),
+    chainRej(assertEquals($, expected))
+  )(DEFAULT_CONFIG)
+})
+
+test("buildBundle - should call the madlib compiler with correct options", (_) => {
+  command = ""
+  expected = "madlib compile -i /home/madlib/maddoc-cli/madlib_modules/https___github_com_madlib_lang_maddoc_archive_refs_heads_master_zip/src/Main.mad --target browser --bundle -o .docs/bundle.js"
+
+  exec = (cmd) => {
+    command = cmd
+    return of("good")
+  }
+
+  return pipe(
+    buildBundle({ ...INITIAL_IOUTILS, exec }),
+    mapRej((_) => AssertionError(false, true)),
+    chain((_) => assertEquals(command, expected))
+  )(DEFAULT_CONFIG)
+})
+
+test("buildBundle - should reject if 'madlib compile' command fails", (_) => {
+  expected = "Compilation error"
+  exec = (cmd) => bad(CommandError(1, "Compilation error"))
+
+  return pipe(
+    buildBundle({ ...INITIAL_IOUTILS, exec }),
+    chainRej(assertEquals($, expected))
+  )(DEFAULT_CONFIG)
+})
+
+test("buildSass - should call the sass executable with correct options", (_) => {
+  command = ""
+  expected = "/home/madlib/maddoc-cli/node_modules/.bin/sass /home/madlib/maddoc-cli/madlib_modules/https___github_com_madlib_lang_maddoc_archive_refs_heads_master_zip/src/styles/main.scss .docs/styles/main.css"
+
+  exec = (cmd) => {
+    command = cmd
+    return of("good")
+  }
+
+  return pipe(
+    buildSass({ ...INITIAL_IOUTILS, exec }),
+    mapRej((_) => AssertionError(false, true)),
+    chain((_) => assertEquals(command, expected))
+  )(DEFAULT_CONFIG)
+})
+
+test("buildSass - should reject if 'sass' command fails", (_) => {
+  expected = "Sass error"
+  exec = (cmd) => bad(CommandError(1, "Sass error"))
+
+  return pipe(
+    buildSass({ ...INITIAL_IOUTILS, exec }),
+    chainRej(assertEquals($, expected))
+  )(DEFAULT_CONFIG)
+})
+
+test("copyHtml - should call 'cp' with correct options", (_) => {
+  command = ""
+  expected = "cp /home/madlib/maddoc-cli/madlib_modules/https___github_com_madlib_lang_maddoc_archive_refs_heads_master_zip/src/index.html .docs/index.html"
+
+  exec = (cmd) => {
+    command = cmd
+    return of("good")
+  }
+
+  return pipe(
+    copyHtml({ ...INITIAL_IOUTILS, exec }),
+    mapRej((_) => AssertionError(false, true)),
+    chain((_) => assertEquals(command, expected))
+  )(DEFAULT_CONFIG)
+})
+
+test("copyHtml - should reject if 'cp' command fails", (_) => {
+  expected = "cp error"
+  exec = (cmd) => bad(CommandError(1, "cp error"))
+
+  return pipe(
+    copyHtml({ ...INITIAL_IOUTILS, exec }),
+    chainRej(assertEquals($, expected))
+  )(DEFAULT_CONFIG)
+})
+
+test("buildDocumentation", (_) => {
+  commands = []
+  expected = [
+    "madlib compile -i /home/madlib/maddoc-cli/madlib_modules/https___github_com_madlib_lang_maddoc_archive_refs_heads_master_zip/src/Main.mad --target browser --bundle -o .docs/bundle.js",
+    "/home/madlib/maddoc-cli/node_modules/.bin/sass /home/madlib/maddoc-cli/madlib_modules/https___github_com_madlib_lang_maddoc_archive_refs_heads_master_zip/src/styles/main.scss .docs/styles/main.css",
+    "cp /home/madlib/maddoc-cli/madlib_modules/https___github_com_madlib_lang_maddoc_archive_refs_heads_master_zip/src/index.html .docs/index.html"
+  ]
+
+  exec = (cmd) => {
+    commands = mappend(commands, [cmd])
+    return of("good")
+  }
+
+  return pipe(
+    buildDocumentation({ ...INITIAL_IOUTILS, exec }),
+    mapRej((_) => AssertionError(false, true)),
+    chain((_) => assertEquals(commands, expected))
+  )(DEFAULT_CONFIG)
 })

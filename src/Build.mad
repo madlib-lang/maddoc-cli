@@ -1,17 +1,8 @@
-import IO from "IO"
-import { andDo } from "Monad"
-import { Wish, bad, fulfill, mapRej, parallel } from "Wish"
+import { Wish, bad, mapRej, parallel } from "Wish"
 import { fromMaybe, Just, Nothing } from "Maybe"
 import { nth, drop, intercalate, last, reduce } from "List"
 import { split } from "String"
-import {
-  exec,
-  getCurrentPath,
-  getExecutablePath,
-  CommandError,
-  getCommandErrorMessage
-} from "System"
-
+import { getCommandErrorMessage } from "System"
 import { IOUtils, defaultIOUtils } from "./IOUtils"
 
 alias InputOutput = { input :: String, output :: String }
@@ -129,10 +120,10 @@ export generateConfiguration = (ioUtils) => pipe(
 ])
 
 
-generateJson :: Config -> Wish String String
-export generateJson = (config) => pipe(
+generateJson :: IOUtils -> Config -> Wish String String
+export generateJson = (ioUtils, config) => pipe(
   (c) => `madlib doc -i ${c.documentationDotJson.input} > ${c.documentationDotJson.output}`,
-  exec,
+  ioUtils.exec,
   mapRej(getCommandErrorMessage),
   mapRej((err) =>
     `An error occured while generating the docs, here is the error from madlib:\n${err}`
@@ -141,29 +132,29 @@ export generateJson = (config) => pipe(
 )(config)
 
 
-buildBundle :: Config -> Wish String String
-buildBundle = pipe(
-  (c) => exec(`madlib compile -i ${c.madlib.input} --target browser --bundle -o ${c.madlib.output}`),
+buildBundle :: IOUtils -> Config -> Wish String String
+export buildBundle = (ioUtils) => pipe(
+  (c) => ioUtils.exec(`madlib compile -i ${c.madlib.input} --target browser --bundle -o ${c.madlib.output}`),
   mapRej(getCommandErrorMessage)
 )
 
-buildSass :: Config -> Wish String String
-buildSass = pipe(
-  (c) => exec(`${c.sassExecutablePath} ${c.styles.input} ${c.styles.output}`),
+buildSass :: IOUtils -> Config -> Wish String String
+export buildSass = (ioUtils) => pipe(
+  (c) => ioUtils.exec(`${c.sassExecutablePath} ${c.styles.input} ${c.styles.output}`),
   mapRej(getCommandErrorMessage)
 )
 
-copyHtml :: Config -> Wish String String
-copyHtml = pipe(
-  (c) => exec(`cp ${c.html.input} ${c.html.output}`),
+copyHtml :: IOUtils -> Config -> Wish String String
+export copyHtml = (ioUtils) => pipe(
+  (c) => ioUtils.exec(`cp ${c.html.input} ${c.html.output}`),
   mapRej(getCommandErrorMessage)
 )
 
-buildDocumentation :: Config -> Wish String String
-export buildDocumentation = (config) => pipe(
-  buildBundle,
-  andDo(buildSass(config)),
-  andDo(copyHtml(config)),
-  andDo(map(mappend($, "/.docs"), getCurrentPath)),
+buildDocumentation :: IOUtils -> Config -> Wish String String
+export buildDocumentation = (ioUtils, config) => pipe(
+  buildBundle(ioUtils),
+  chain((_) => buildSass(ioUtils, config)),
+  chain((_) => copyHtml(ioUtils, config)),
+  chain((_) => map(mappend($, "/.docs"), ioUtils.getCurrentPath)),
   map((outputPath) => `Documentation built and available in the folder '${outputPath}'`)
 )(config)
