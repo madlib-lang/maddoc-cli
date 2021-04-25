@@ -140,13 +140,13 @@ test("generateJson - should call 'madlib doc' command with correct options", (_)
   command = ""
   expected = "madlib doc -i /path/to/document > /home/madlib/maddoc-cli/madlib_modules/https___github_com_madlib_lang_maddoc_archive_refs_heads_master_zip/src/documentation.json"
 
-  exec = (cmd) => {
+  execRecorder = (cmd) => {
     command = cmd
     return of("good")
   }
 
   return pipe(
-    generateJson({ ...INITIAL_IOUTILS, exec }),
+    generateJson({ ...INITIAL_IOUTILS, exec: execRecorder }),
     mapRej((_) => AssertionError(false, true)),
     chain((_) => assertEquals(command, expected))
   )(DEFAULT_CONFIG)
@@ -154,10 +154,10 @@ test("generateJson - should call 'madlib doc' command with correct options", (_)
 
 test("generateJson - should reject if 'madlib doc' command fails", (_) => {
   expected = "An error occured while generating the docs, here is the error from madlib:\nCould not generate doc"
-  exec = (cmd) => bad(CommandError(1, "Could not generate doc"))
+  execRecorder = (cmd) => bad(CommandError(1, "Could not generate doc"))
 
   return pipe(
-    generateJson({ ...INITIAL_IOUTILS, exec }),
+    generateJson({ ...INITIAL_IOUTILS, exec: execRecorder }),
     chainRej(assertEquals($, expected))
   )(DEFAULT_CONFIG)
 })
@@ -166,13 +166,13 @@ test("buildBundle - should call the madlib compiler with correct options", (_) =
   command = ""
   expected = "madlib compile -i /home/madlib/maddoc-cli/madlib_modules/https___github_com_madlib_lang_maddoc_archive_refs_heads_master_zip/src/Main.mad --target browser --bundle -o .docs/bundle.js"
 
-  exec = (cmd) => {
+  execRecorder = (cmd) => {
     command = cmd
     return of("good")
   }
 
   return pipe(
-    buildBundle({ ...INITIAL_IOUTILS, exec }),
+    buildBundle({ ...INITIAL_IOUTILS, exec: execRecorder }),
     mapRej((_) => AssertionError(false, true)),
     chain((_) => assertEquals(command, expected))
   )(DEFAULT_CONFIG)
@@ -180,10 +180,10 @@ test("buildBundle - should call the madlib compiler with correct options", (_) =
 
 test("buildBundle - should reject if 'madlib compile' command fails", (_) => {
   expected = "Compilation error"
-  exec = (cmd) => bad(CommandError(1, "Compilation error"))
+  execRecorder = (cmd) => bad(CommandError(1, "Compilation error"))
 
   return pipe(
-    buildBundle({ ...INITIAL_IOUTILS, exec }),
+    buildBundle({ ...INITIAL_IOUTILS, exec: execRecorder }),
     chainRej(assertEquals($, expected))
   )(DEFAULT_CONFIG)
 })
@@ -192,13 +192,13 @@ test("buildSass - should call the sass executable with correct options", (_) => 
   command = ""
   expected = "/home/madlib/maddoc-cli/node_modules/.bin/sass /home/madlib/maddoc-cli/madlib_modules/https___github_com_madlib_lang_maddoc_archive_refs_heads_master_zip/src/styles/main.scss .docs/styles/main.css"
 
-  exec = (cmd) => {
+  execRecorder = (cmd) => {
     command = cmd
     return of("good")
   }
 
   return pipe(
-    buildSass({ ...INITIAL_IOUTILS, exec }),
+    buildSass({ ...INITIAL_IOUTILS, exec: execRecorder }),
     mapRej((_) => AssertionError(false, true)),
     chain((_) => assertEquals(command, expected))
   )(DEFAULT_CONFIG)
@@ -206,10 +206,10 @@ test("buildSass - should call the sass executable with correct options", (_) => 
 
 test("buildSass - should reject if 'sass' command fails", (_) => {
   expected = "Sass error"
-  exec = (cmd) => bad(CommandError(1, "Sass error"))
+  execRecorder = (cmd) => bad(CommandError(1, "Sass error"))
 
   return pipe(
-    buildSass({ ...INITIAL_IOUTILS, exec }),
+    buildSass({ ...INITIAL_IOUTILS, exec: execRecorder }),
     chainRej(assertEquals($, expected))
   )(DEFAULT_CONFIG)
 })
@@ -218,13 +218,13 @@ test("copyHtml - should call 'cp' with correct options", (_) => {
   command = ""
   expected = "cp /home/madlib/maddoc-cli/madlib_modules/https___github_com_madlib_lang_maddoc_archive_refs_heads_master_zip/src/index.html .docs/index.html"
 
-  exec = (cmd) => {
+  execRecorder = (cmd) => {
     command = cmd
     return of("good")
   }
 
   return pipe(
-    copyHtml({ ...INITIAL_IOUTILS, exec }),
+    copyHtml({ ...INITIAL_IOUTILS, exec: execRecorder }),
     mapRej((_) => AssertionError(false, true)),
     chain((_) => assertEquals(command, expected))
   )(DEFAULT_CONFIG)
@@ -232,10 +232,10 @@ test("copyHtml - should call 'cp' with correct options", (_) => {
 
 test("copyHtml - should reject if 'cp' command fails", (_) => {
   expected = "cp error"
-  exec = (cmd) => bad(CommandError(1, "cp error"))
+  execRecorder = (cmd) => bad(CommandError(1, "cp error"))
 
   return pipe(
-    copyHtml({ ...INITIAL_IOUTILS, exec }),
+    copyHtml({ ...INITIAL_IOUTILS, exec: execRecorder }),
     chainRej(assertEquals($, expected))
   )(DEFAULT_CONFIG)
 })
@@ -248,13 +248,13 @@ test("buildDocumentation", (_) => {
     "cp /home/madlib/maddoc-cli/madlib_modules/https___github_com_madlib_lang_maddoc_archive_refs_heads_master_zip/src/index.html .docs/index.html"
   ]
 
-  exec = (cmd) => {
+  execRecorder = (cmd) => {
     commands = mappend(commands, [cmd])
     return of("good")
   }
 
   return pipe(
-    buildDocumentation({ ...INITIAL_IOUTILS, exec }),
+    buildDocumentation({ ...INITIAL_IOUTILS, exec: execRecorder }),
     mapRej((_) => AssertionError(false, true)),
     chain((_) => assertEquals(commands, expected))
   )(DEFAULT_CONFIG)
