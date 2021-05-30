@@ -5,7 +5,7 @@
   "bin": "src/Main.mad",
   "madlibVersion": "0.9.0",
   "dependencies": {
-    "MadDoc": "https://github.com/madlib-lang/maddoc/archive/233d1995cf3353a7279d8420697826825b414975.zip"
+    "MadDoc": "https://github.com/madlib-lang/maddoc/archive/refs/heads/master.zip"
   },
   "importAliases": {
     ".": "src"
