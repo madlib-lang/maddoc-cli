@@ -1,9 +1,10 @@
-import { Wish, bad, mapRej, parallel } from "Wish"
+import type { Wish } from "Wish"
+import { bad, mapRej, parallel } from "Wish"
 import { Just, Nothing } from "Maybe"
 import { nth, dropLast, intercalate, last, reduce } from "List"
 import { split } from "String"
 import { getCommandErrorMessage } from "System"
-import { IOUtils } from "./IOUtils"
+import type { IOUtils } from "@/IOUtils"
 
 alias InputOutput = { input :: String, output :: String }
 
@@ -53,19 +54,19 @@ export pathToDocument = pipe(
 madDocRootPath :: IOUtils -> Wish String String
 export madDocRootPath = (ioUtils) => map(
   (path) => pipe(
-    parentPath(2),
+    parentPath(3),
     split("/"),
     last,
     where
-      is Just "madlib_modules": `${parentPath(2, path)}/${MADDOC_PACKAGE_FOLDER}`
-      is _                    : `${parentPath(1, path)}/${MADLIB_MODULES_FOLDER}/${MADDOC_PACKAGE_FOLDER}`
+      is Just "madlib_modules": `${parentPath(3, path)}/${MADDOC_PACKAGE_FOLDER}`
+      is _                    : `${parentPath(2, path)}/${MADLIB_MODULES_FOLDER}/${MADDOC_PACKAGE_FOLDER}`
   )(path),
   ioUtils.getExecutablePath
 )
 
 sassExecutablePath :: IOUtils -> Wish String String
 export sassExecutablePath = (ioUtils) => map(
-  (rootPath) => `${parentPath(1, rootPath)}/node_modules/.bin/sass`,
+  (rootPath) => `${parentPath(2, rootPath)}/node_modules/.bin/sass`,
   madDocRootPath(ioUtils)
 )
 

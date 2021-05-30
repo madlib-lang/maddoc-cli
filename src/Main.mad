@@ -1,14 +1,16 @@
 import IO from "IO"
 import { andDo } from "Monad"
-import { Wish, fulfill } from "Wish"
-import { defaultIOUtils } from "./IOUtils"
+import type { Wish } from "Wish"
+import { fulfill } from "Wish"
+
+import { defaultIOUtils } from "@/IOUtils"
+import type { Config } from "@/Build"
 import {
-  Config,
   buildDocumentation,
   generateConfiguration,
   pathToDocument,
   generateJson
-} from "./Build"
+} from "@/Build"
 
 
 main :: Config -> Wish String String

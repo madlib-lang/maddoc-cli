@@ -1,7 +1,9 @@
+import type { AssertionError } from "TestTools"
 import { test, assertEquals, AssertionError } from "TestTools"
 import { exists } from "FileSystem"
 import { exec } from "System"
-import { bad, chainRej, mapRej, Wish } from "Wish"
+import type { Wish } from "Wish"
+import { bad, chainRej, mapRej } from "Wish"
 import { andDo } from "Monad"
 
 assertFileExists :: String -> Wish AssertionError String

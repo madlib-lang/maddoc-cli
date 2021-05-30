@@ -1,11 +1,11 @@
+import type { CommandError } from "System"
 import {
   getExecutablePath,
   getArgs,
   getCurrentPath,
-  CommandError,
   exec
 } from "System"
-import { Wish } from "Wish"
+import type { Wish } from "Wish"
 
 export alias IOUtils = {
   getArgs           :: Wish String (List String),

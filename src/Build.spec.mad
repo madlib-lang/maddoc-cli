@@ -4,9 +4,9 @@ import { bad, chainRej, mapRej, Wish } from "Wish"
 import { andDo } from "Monad"
 import IO from "IO"
 
-import { IOUtils } from "./IOUtils"
+import type { IOUtils } from "@/IOUtils"
+import type { Config } from "@/Build"
 import {
-  Config,
   pathToDocument,
   madDocRootPath,
   sassExecutablePath,
@@ -21,7 +21,7 @@ import {
   buildSass,
   copyHtml,
   buildDocumentation
-} from "./Build"
+} from "@/Build"
 
 INITIAL_IOUTILS :: IOUtils
 INITIAL_IOUTILS = {
