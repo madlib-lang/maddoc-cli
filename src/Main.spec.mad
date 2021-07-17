@@ -1,12 +1,12 @@
 import type { AssertionError } from "TestTools"
-import { test, assertEquals, AssertionError } from "TestTools"
+import { test, AssertionError } from "TestTools"
 import { exists } from "FileSystem"
 import { exec } from "System"
 import type { Wish } from "Wish"
-import { bad, chainRej, mapRej } from "Wish"
+import { mapRej } from "Wish"
 import { andDo } from "Monad"
 
-assertFileExists :: String -> Wish AssertionError String
+assertFileExists :: String -> Wish (AssertionError String) String
 assertFileExists = (filePath) => pipe(
   exists,
   mapRej((_) => AssertionError("OK", `${filePath} not found`))

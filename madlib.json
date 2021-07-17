@@ -1,13 +1,16 @@
 {
-  "name": "maddoc-cli",
+  "name": "MadDocCli",
   "version": "0.0.1",
+  "madlibVersion": "0.9.0",
   "main": "src/Main.mad",
   "bin": "src/Main.mad",
-  "madlibVersion": "0.9.0",
-  "dependencies": {
-    "MadDoc": "https://github.com/madlib-lang/maddoc/archive/refs/heads/master.zip"
-  },
   "importAliases": {
     ".": "src"
-  }
+  },
+  "dependencies": [
+    {
+      "url": "https://github.com/madlib-lang/maddoc/archive/refs/heads/feature/update-for-madlib-0.10.0.zip",
+      "description": "MadDoc"
+    }
+  ]
 }

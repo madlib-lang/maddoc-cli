@@ -44,10 +44,10 @@ pathToDocument :: IOUtils -> Wish String String
 export pathToDocument = pipe(
   .getArgs,
   map(nth(0)),
-  chain(where
-    is Just path: of(path)
-    is Nothing  : bad("You must give a path to the .mad files to document!")
-  )
+  chain(where {
+    Just(path) => of(path)
+    Nothing   => bad("You must give a path to the .mad files to document!")
+  })
 )
 
 
@@ -57,9 +57,10 @@ export madDocRootPath = (ioUtils) => map(
     parentPath(3),
     split("/"),
     last,
-    where
-      is Just "madlib_modules": `${parentPath(3, path)}/${MADDOC_PACKAGE_FOLDER}`
-      is _                    : `${parentPath(2, path)}/${MADLIB_MODULES_FOLDER}/${MADDOC_PACKAGE_FOLDER}`
+    where {
+      Just("madlib_modules") => `${parentPath(3, path)}/${MADDOC_PACKAGE_FOLDER}`
+      _ => `${parentPath(2, path)}/${MADLIB_MODULES_FOLDER}/${MADDOC_PACKAGE_FOLDER}`
+    }
   )(path),
   ioUtils.getExecutablePath
 )
@@ -104,12 +105,15 @@ export htmlSourcePath = (ioUtils) => map(
 generateConfiguration :: IOUtils -> Wish String Config
 export generateConfiguration = (ioUtils) => pipe(
   parallel,
-  map(where is [madMain, sassMain, htmlIndex, sassBin, docInput, docOutput]: {
-    madlib: { input: madMain, output: JS_BUNDLE_PATH },
-    styles: { input: sassMain, output: CSS_TARGET_PATH },
-    html: { input: htmlIndex, output: HTML_TARGET_PATH },
-    sassExecutablePath: sassBin,
-    documentationDotJson: { input: docInput, output: docOutput }
+  map(where {
+    [madMain, sassMain, htmlIndex, sassBin, docInput, docOutput] => 
+      {
+        madlib: { input: madMain, output: JS_BUNDLE_PATH },
+        styles: { input: sassMain, output: CSS_TARGET_PATH },
+        html: { input: htmlIndex, output: HTML_TARGET_PATH },
+        sassExecutablePath: sassBin,
+        documentationDotJson: { input: docInput, output: docOutput }
+      }
   })
 )([
   madDocMainPath(ioUtils),
