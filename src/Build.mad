@@ -17,7 +17,7 @@ export alias Config = {
 }
 
 MADDOC_PACKAGE_FOLDER :: String
-MADDOC_PACKAGE_FOLDER = "https___github_com_madlib_lang_maddoc_archive_refs_heads_master_zip"
+MADDOC_PACKAGE_FOLDER = "MadDoc"
 
 MADLIB_MODULES_FOLDER :: String
 MADLIB_MODULES_FOLDER = "madlib_modules"

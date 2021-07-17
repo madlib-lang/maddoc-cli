@@ -1,4 +1,4 @@
-import { test, assertEquals, AssertionError } from "TestTools"
+import { test, assertEquals, AssertionError, Error } from "TestTools"
 import { exec, CommandError } from "System"
 import { bad, chainRej, mapRej, Wish } from "Wish"
 import { andDo } from "Monad"
@@ -34,27 +34,27 @@ INITIAL_IOUTILS = {
 DEFAULT_CONFIG :: Config
 DEFAULT_CONFIG = {
   madlib: {
-    input: "/home/madlib/maddoc-cli/madlib_modules/https___github_com_madlib_lang_maddoc_archive_refs_heads_master_zip/src/Main.mad",
+    input: "/home/madlib/maddoc-cli/madlib_modules/MadDoc/src/Main.mad",
     output: ".docs/bundle.js"
   },
   styles: {
-    input: "/home/madlib/maddoc-cli/madlib_modules/https___github_com_madlib_lang_maddoc_archive_refs_heads_master_zip/src/styles/main.scss",
+    input: "/home/madlib/maddoc-cli/madlib_modules/MadDoc/src/styles/main.scss",
     output: ".docs/styles/main.css"
   },
   html: {
-    input: "/home/madlib/maddoc-cli/madlib_modules/https___github_com_madlib_lang_maddoc_archive_refs_heads_master_zip/src/index.html",
+    input: "/home/madlib/maddoc-cli/madlib_modules/MadDoc/src/index.html",
     output: ".docs/index.html"
   },
   sassExecutablePath: "/home/madlib/maddoc-cli/node_modules/.bin/sass",
   documentationDotJson: {
     input: "/path/to/document",
-    output: "/home/madlib/maddoc-cli/madlib_modules/https___github_com_madlib_lang_maddoc_archive_refs_heads_master_zip/src/documentation.json"
+    output: "/home/madlib/maddoc-cli/madlib_modules/MadDoc/src/documentation.json"
   }
 }
 
 test("pathToDocument - arg is set", (_) => pipe(
   pathToDocument,
-  mapRej((_) => AssertionError(false, true)),
+  mapRej((_) => Error("pathToDocument should succeed")),
   chain(assertEquals($, "/path/to/document"))
 )({ ...INITIAL_IOUTILS, getArgs: of(["/path/to/document"]) }))
 
@@ -65,61 +65,61 @@ test("pathToDocument - arg is not set", (_) => pipe(
 
 test("madDocRootPath - should return the root of maddoc project", (_) => pipe(
   madDocRootPath,
-  mapRej((_) => AssertionError(false, true)),
-  chain(assertEquals($, "/home/madlib/maddoc-cli/madlib_modules/https___github_com_madlib_lang_maddoc_archive_refs_heads_master_zip"))
+  mapRej((_) => Error("madDocRootPath should be success")),
+  chain(assertEquals($, "/home/madlib/maddoc-cli/madlib_modules/MadDoc"))
 )({ ...INITIAL_IOUTILS, getExecutablePath: of("/home/madlib/maddoc-cli/.run/Main.mjs") }))
 
 test("madDocRootPath - should return the root of maddoc project when installed as a dependency", (_) => pipe(
   madDocRootPath,
-  mapRej((_) => AssertionError(false, true)),
-  chain(assertEquals($, "/home/madlib/my-package/madlib_modules/https___github_com_madlib_lang_maddoc_archive_refs_heads_master_zip"))
+  mapRej((_) => Error("madDocRootPath should be success")),
+  chain(assertEquals($, "/home/madlib/my-package/madlib_modules/MadDoc"))
 )({ ...INITIAL_IOUTILS, getExecutablePath: of("/home/madlib/my-package/madlib_modules/https___github_com_madlib_lang_maddoc_cli_archive_refs_heads_master_zip/.run/Main.mjs") }))
 
 test("sassExecutablePath - should return the local sass install in node_modules if run locally", (_) => pipe(
   sassExecutablePath,
-  mapRej((_) => AssertionError(false, true)),
+  mapRej((_) => Error("sassExecutablePath should be success")),
   chain(assertEquals($, "/home/madlib/maddoc-cli/node_modules/.bin/sass"))
 )({ ...INITIAL_IOUTILS, getExecutablePath: of("/home/madlib/maddoc-cli/.run/Main.mjs") }))
 
 test("sassExecutablePath - should return the local sass install in node_modules if run from a package", (_) => pipe(
   sassExecutablePath,
-  mapRej((_) => AssertionError(false, true)),
+  mapRej((_) => Error("sassExecutablePath should be success")),
   chain(assertEquals($, "/home/madlib/my-package/node_modules/.bin/sass"))
 )({
   ...INITIAL_IOUTILS,
   getExecutablePath: of(
-    "/home/madlib/my-package/madlib_modules/https___github_com_madlib_lang_maddoc_archive_refs_heads_master_zip/.run/Main.mjs"
+    "/home/madlib/my-package/madlib_modules/MadDoc/.run/Main.mjs"
   )
 }))
 
 test("madDocSrcPath - should return the path of the src folder from MadDoc", (_) => pipe(
   madDocSrcPath,
-  mapRej((_) => AssertionError(false, true)),
-  chain(assertEquals($, "/home/madlib/maddoc-cli/madlib_modules/https___github_com_madlib_lang_maddoc_archive_refs_heads_master_zip/src"))
+  mapRej((_) => Error("madDocSrcPath should be success")),
+  chain(assertEquals($, "/home/madlib/maddoc-cli/madlib_modules/MadDoc/src"))
 )({ ...INITIAL_IOUTILS, getExecutablePath: of("/home/madlib/maddoc-cli/.run/Main.mjs") }))
 
 test("documentationTargetPath - should return the path for the documentation.json file", (_) => pipe(
   documentationTargetPath,
-  mapRej((_) => AssertionError(false, true)),
-  chain(assertEquals($, "/home/madlib/maddoc-cli/madlib_modules/https___github_com_madlib_lang_maddoc_archive_refs_heads_master_zip/src/documentation.json"))
+  mapRej((_) => Error("documentationTargetPath should be success")),
+  chain(assertEquals($, "/home/madlib/maddoc-cli/madlib_modules/MadDoc/src/documentation.json"))
 )({ ...INITIAL_IOUTILS, getExecutablePath: of("/home/madlib/maddoc-cli/.run/Main.mjs") }))
 
 test("madDocMainPath - should return the path for the Main module of MadDoc", (_) => pipe(
   madDocMainPath,
-  mapRej((_) => AssertionError(false, true)),
-  chain(assertEquals($, "/home/madlib/maddoc-cli/madlib_modules/https___github_com_madlib_lang_maddoc_archive_refs_heads_master_zip/src/Main.mad"))
+  mapRej((_) => Error("madDocMainPath should be success")),
+  chain(assertEquals($, "/home/madlib/maddoc-cli/madlib_modules/MadDoc/src/Main.mad"))
 )({ ...INITIAL_IOUTILS, getExecutablePath: of("/home/madlib/maddoc-cli/.run/Main.mjs") }))
 
 test("sassPath - should return the path for the sass file to compile", (_) => pipe(
   sassPath,
-  mapRej((_) => AssertionError(false, true)),
-  chain(assertEquals($, "/home/madlib/maddoc-cli/madlib_modules/https___github_com_madlib_lang_maddoc_archive_refs_heads_master_zip/src/styles/main.scss"))
+  mapRej((_) => Error("sassPath should be success")),
+  chain(assertEquals($, "/home/madlib/maddoc-cli/madlib_modules/MadDoc/src/styles/main.scss"))
 )({ ...INITIAL_IOUTILS, getExecutablePath: of("/home/madlib/maddoc-cli/.run/Main.mjs") }))
 
 test("htmlSourcePath - should return the path of index.html file to copy", (_) => pipe(
   htmlSourcePath,
-  mapRej((_) => AssertionError(false, true)),
-  chain(assertEquals($, "/home/madlib/maddoc-cli/madlib_modules/https___github_com_madlib_lang_maddoc_archive_refs_heads_master_zip/src/index.html"))
+  mapRej((_) => Error("htmlSourcePath should be success")),
+  chain(assertEquals($, "/home/madlib/maddoc-cli/madlib_modules/MadDoc/src/index.html"))
 )({ ...INITIAL_IOUTILS, getExecutablePath: of("/home/madlib/maddoc-cli/.run/Main.mjs") }))
 
 test("generateConfiguration - should generate a correct Config with all paths", (_) => {
@@ -127,7 +127,7 @@ test("generateConfiguration - should generate a correct Config with all paths", 
 
   return pipe(
     generateConfiguration,
-    mapRej((_) => AssertionError(false, true)),
+    mapRej((_) => Error(expected)),
     chain(assertEquals($, expected))
   )({
     ...INITIAL_IOUTILS,
@@ -138,7 +138,7 @@ test("generateConfiguration - should generate a correct Config with all paths", 
 
 test("generateJson - should call 'madlib doc' command with correct options", (_) => {
   command = ""
-  expected = "madlib doc -i /path/to/document > /home/madlib/maddoc-cli/madlib_modules/https___github_com_madlib_lang_maddoc_archive_refs_heads_master_zip/src/documentation.json"
+  expected = "madlib doc -i /path/to/document > /home/madlib/maddoc-cli/madlib_modules/MadDoc/src/documentation.json"
 
   execRecorder = (cmd) => {
     command = cmd
@@ -147,7 +147,7 @@ test("generateJson - should call 'madlib doc' command with correct options", (_)
 
   return pipe(
     generateJson({ ...INITIAL_IOUTILS, exec: execRecorder }),
-    mapRej((_) => AssertionError(false, true)),
+    mapRej((_) => Error("generateJson should be success")),
     chain((_) => assertEquals(command, expected))
   )(DEFAULT_CONFIG)
 })
@@ -164,7 +164,7 @@ test("generateJson - should reject if 'madlib doc' command fails", (_) => {
 
 test("buildBundle - should call the madlib compiler with correct options", (_) => {
   command = ""
-  expected = "madlib compile -i /home/madlib/maddoc-cli/madlib_modules/https___github_com_madlib_lang_maddoc_archive_refs_heads_master_zip/src/Main.mad --target browser --bundle -o .docs/bundle.js"
+  expected = "madlib compile -i /home/madlib/maddoc-cli/madlib_modules/MadDoc/src/Main.mad --target browser --bundle -o .docs/bundle.js"
 
   execRecorder = (cmd) => {
     command = cmd
@@ -173,7 +173,7 @@ test("buildBundle - should call the madlib compiler with correct options", (_) =
 
   return pipe(
     buildBundle({ ...INITIAL_IOUTILS, exec: execRecorder }),
-    mapRej((_) => AssertionError(false, true)),
+    mapRej((_) => Error("buildBundle should be success")),
     chain((_) => assertEquals(command, expected))
   )(DEFAULT_CONFIG)
 })
@@ -190,7 +190,7 @@ test("buildBundle - should reject if 'madlib compile' command fails", (_) => {
 
 test("buildSass - should call the sass executable with correct options", (_) => {
   command = ""
-  expected = "/home/madlib/maddoc-cli/node_modules/.bin/sass /home/madlib/maddoc-cli/madlib_modules/https___github_com_madlib_lang_maddoc_archive_refs_heads_master_zip/src/styles/main.scss .docs/styles/main.css"
+  expected = "/home/madlib/maddoc-cli/node_modules/.bin/sass /home/madlib/maddoc-cli/madlib_modules/MadDoc/src/styles/main.scss .docs/styles/main.css"
 
   execRecorder = (cmd) => {
     command = cmd
@@ -199,7 +199,7 @@ test("buildSass - should call the sass executable with correct options", (_) => 
 
   return pipe(
     buildSass({ ...INITIAL_IOUTILS, exec: execRecorder }),
-    mapRej((_) => AssertionError(false, true)),
+    mapRej((_) => Error("buildSass should be success")),
     chain((_) => assertEquals(command, expected))
   )(DEFAULT_CONFIG)
 })
@@ -216,7 +216,7 @@ test("buildSass - should reject if 'sass' command fails", (_) => {
 
 test("copyHtml - should call 'cp' with correct options", (_) => {
   command = ""
-  expected = "cp /home/madlib/maddoc-cli/madlib_modules/https___github_com_madlib_lang_maddoc_archive_refs_heads_master_zip/src/index.html .docs/index.html"
+  expected = "cp /home/madlib/maddoc-cli/madlib_modules/MadDoc/src/index.html .docs/index.html"
 
   execRecorder = (cmd) => {
     command = cmd
@@ -225,7 +225,7 @@ test("copyHtml - should call 'cp' with correct options", (_) => {
 
   return pipe(
     copyHtml({ ...INITIAL_IOUTILS, exec: execRecorder }),
-    mapRej((_) => AssertionError(false, true)),
+    mapRej((_) => Error("copyHtml should be success")),
     chain((_) => assertEquals(command, expected))
   )(DEFAULT_CONFIG)
 })
@@ -243,9 +243,9 @@ test("copyHtml - should reject if 'cp' command fails", (_) => {
 test("buildDocumentation", (_) => {
   commands = []
   expected = [
-    "madlib compile -i /home/madlib/maddoc-cli/madlib_modules/https___github_com_madlib_lang_maddoc_archive_refs_heads_master_zip/src/Main.mad --target browser --bundle -o .docs/bundle.js",
-    "/home/madlib/maddoc-cli/node_modules/.bin/sass /home/madlib/maddoc-cli/madlib_modules/https___github_com_madlib_lang_maddoc_archive_refs_heads_master_zip/src/styles/main.scss .docs/styles/main.css",
-    "cp /home/madlib/maddoc-cli/madlib_modules/https___github_com_madlib_lang_maddoc_archive_refs_heads_master_zip/src/index.html .docs/index.html"
+    "madlib compile -i /home/madlib/maddoc-cli/madlib_modules/MadDoc/src/Main.mad --target browser --bundle -o .docs/bundle.js",
+    "/home/madlib/maddoc-cli/node_modules/.bin/sass /home/madlib/maddoc-cli/madlib_modules/MadDoc/src/styles/main.scss .docs/styles/main.css",
+    "cp /home/madlib/maddoc-cli/madlib_modules/MadDoc/src/index.html .docs/index.html"
   ]
 
   execRecorder = (cmd) => {
@@ -255,7 +255,7 @@ test("buildDocumentation", (_) => {
 
   return pipe(
     buildDocumentation({ ...INITIAL_IOUTILS, exec: execRecorder }),
-    mapRej((_) => AssertionError(false, true)),
+    mapRej((_) => Error(["buildDocumentation should be success"])),
     chain((_) => assertEquals(commands, expected))
   )(DEFAULT_CONFIG)
 })
