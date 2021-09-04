@@ -1,7 +1,7 @@
 {
   "name": "MadDocCli",
-  "version": "0.0.4",
-  "madlibVersion": "0.10.0",
+  "version": "0.0.5",
+  "madlibVersion": "0.11.0",
   "main": "src/Main.mad",
   "bin": "src/Main.mad",
   "importAliases": {
@@ -9,8 +9,8 @@
   },
   "dependencies": [
     {
-      "url": "https://github.com/madlib-lang/maddoc/archive/refs/tags/v0.0.2.zip",
-      "minVersion": "0.0.2",
+      "minVersion": "0.0.3",
+      "url": "https://github.com/madlib-lang/maddoc/archive/refs/tags/v0.0.3.zip",
       "description": "MadDoc"
     }
   ]
