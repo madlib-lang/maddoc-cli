@@ -1,3 +1,5 @@
+#iftarget js
+
 import IO from "IO"
 import { andDo } from "Monad"
 import type { Wish } from "Wish"
@@ -26,4 +28,6 @@ fulfill(
   pathToDocument(defaultIOUtils)
 )
 
-fulfill(IO.log, IO.log, chain(main, generateConfiguration(defaultIOUtils)))
+fulfill(IO.trace("err"), IO.trace("good"), chain(main, generateConfiguration(defaultIOUtils)))
+
+#endif

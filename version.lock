@@ -1,11 +1,18 @@
 {
-  "buildHash": "22740c054270db365d0f809fefce2aef",
-  "versionHash": "346d13300ccbf7bd88ca7ab380371b50",
-  "api": {
-    "apiNames": {},
+  "buildHash": "37bb5f42cec069516b4ea36507f5e736",
+  "jsApi": {
     "apiInstances": [],
     "apiAliases": {},
-    "apiTypes": {},
-    "apiInterfaces": {}
-  }
+    "apiInterfaces": {},
+    "apiNames": {},
+    "apiTypes": {}
+  },
+  "llvmApi": {
+    "apiInstances": [],
+    "apiAliases": {},
+    "apiInterfaces": {},
+    "apiNames": {},
+    "apiTypes": {}
+  },
+  "versionHash": "0303f93637e61e28843862449f225607"
 }

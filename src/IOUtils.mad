@@ -1,23 +1,28 @@
-import type { CommandError } from "System"
+#iftarget js
+
+import type { CommandResult } from "Process"
 import {
   getExecutablePath,
-  getArgs,
+  Argv,
   getCurrentPath,
   exec
-} from "System"
+} from "Process"
 import type { Wish } from "Wish"
 
 export alias IOUtils = {
-  getArgs           :: Wish String (List String),
-  getCurrentPath    :: Wish String String,
+  args :: List String,
+  getCurrentPath :: Wish String String,
   getExecutablePath :: Wish String String,
-  exec              :: String -> Wish CommandError String
+  exec :: String -> Wish CommandResult CommandResult,
 }
+
 
 defaultIOUtils :: IOUtils
 export defaultIOUtils = {
-  getArgs,
+  args: Argv,
   getCurrentPath,
   getExecutablePath,
-  exec
+  exec,
 }
+
+#endif
