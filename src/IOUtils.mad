@@ -1,26 +1,31 @@
 #iftarget js
 
-import type { CommandResult } from "Process"
+import type { CommandResult, CommandOptions } from "Process"
+import type { Wish } from "Wish"
+import type { IOError } from "IOError"
 import {
   getExecutablePath,
   Argv,
-  getCurrentPath,
+  getCurrentWorkingDirectory,
   exec
 } from "Process"
-import type { Wish } from "Wish"
+import File from "File"
+
 
 export alias IOUtils = {
   args :: List String,
-  getCurrentPath :: Wish String String,
-  getExecutablePath :: Wish String String,
-  exec :: String -> Wish CommandResult CommandResult,
+  writeFile :: String -> String -> Wish IOError {},
+  getCurrentWorkingDirectory :: {} -> String,
+  getExecutablePath :: {} -> String,
+  exec :: String -> List String -> CommandOptions -> Wish CommandResult CommandResult,
 }
 
 
 defaultIOUtils :: IOUtils
 export defaultIOUtils = {
   args: Argv,
-  getCurrentPath,
+  writeFile: File.write,
+  getCurrentWorkingDirectory,
   getExecutablePath,
   exec,
 }

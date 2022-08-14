@@ -1,11 +1,14 @@
 #iftarget js
 
 import type { Wish } from "Wish"
-import { bad, mapRej, parallel } from "Wish"
+import { bad, mapRej } from "Wish"
 import { Just, Nothing } from "Maybe"
 import { nth, dropLast, intercalate, last, reduce } from "List"
 import { split } from "String"
 import type { IOUtils } from "@/IOUtils"
+import Process from "Process"
+import { always } from "Function"
+
 
 alias InputOutput = { input :: String, output :: String }
 
@@ -34,12 +37,12 @@ HTML_TARGET_PATH = ".docs/index.html"
 
 
 parentPath :: Integer -> String -> String
-parentPath = (levelsUp) => pipe(
+parentPath = (levelsUp, path) => pipe(
   split("/"),
   dropLast(levelsUp),
   intercalate(["/"]),
   reduce(mconcat, "")
-)
+)(path)
 
 pathToDocument :: IOUtils -> Wish String String
 export pathToDocument = pipe(
@@ -55,113 +58,111 @@ export pathToDocument = pipe(
 )
 
 
-madDocRootPath :: IOUtils -> Wish String String
-export madDocRootPath = (ioUtils) => map(
-  (path) => pipe(
+madDocRootPath :: IOUtils -> String
+export madDocRootPath = (ioUtils) => {
+  exePath = ioUtils.getExecutablePath()
+
+  return pipe(
     parentPath(3),
     split("/"),
     last,
     where {
       Just("madlib_modules") =>
-        `${parentPath(3, path)}/${MADDOC_PACKAGE_FOLDER}`
+        `${parentPath(3, exePath)}/${MADDOC_PACKAGE_FOLDER}`
 
       _ =>
-        `${parentPath(3, path)}/${MADLIB_MODULES_FOLDER}/${MADDOC_PACKAGE_FOLDER}`
+        `${parentPath(3, exePath)}/${MADLIB_MODULES_FOLDER}/${MADDOC_PACKAGE_FOLDER}`
     }
-  )(path),
-  ioUtils.getExecutablePath
-)
+  )(exePath)
+}
 
-sassExecutablePath :: IOUtils -> Wish String String
-export sassExecutablePath = (ioUtils) => map(
-  (rootPath) => `${parentPath(2, rootPath)}/node_modules/.bin/sass`,
-  madDocRootPath(ioUtils)
-)
+sassExecutablePath :: IOUtils -> String
+export sassExecutablePath = (ioUtils) => pipe(
+  madDocRootPath,
+  (rootPath) => `${parentPath(2, rootPath)}/node_modules/.bin/sass`
+)(ioUtils)
 
-madDocSrcPath :: IOUtils -> Wish String String
-export madDocSrcPath = (ioUtils) => map(
-  mconcat($, "/src"),
-  madDocRootPath(ioUtils)
-)
+madDocSrcPath :: IOUtils -> String
+export madDocSrcPath = (ioUtils) => pipe(
+  madDocRootPath,
+  mconcat($, "/src")
+)(ioUtils)
 
-documentationTargetPath :: IOUtils -> Wish String String
-export documentationTargetPath = (ioUtils) => map(
-  mconcat($, "/documentation.json"),
-  madDocSrcPath(ioUtils)
-)
+documentationTargetPath :: IOUtils -> String
+export documentationTargetPath = (ioUtils) => pipe(
+  madDocSrcPath,
+  mconcat($, "/documentation.json")
+)(ioUtils)
 
-madDocMainPath :: IOUtils -> Wish String String
-export madDocMainPath = (ioUtils) => map(
-  mconcat($, "/Main.mad"),
-  madDocSrcPath(ioUtils)
-)
+madDocMainPath :: IOUtils -> String
+export madDocMainPath = (ioUtils) => pipe(
+  madDocSrcPath,
+  mconcat($, "/Main.mad")
+)(ioUtils)
 
-sassPath :: IOUtils -> Wish String String
-export sassPath = (ioUtils) => map(
-  mconcat($, "/styles/main.scss"),
-  madDocSrcPath(ioUtils)
-)
+sassPath :: IOUtils -> String
+export sassPath = (ioUtils) => pipe(
+  madDocSrcPath,
+  mconcat($, "/styles/main.scss")
+)(ioUtils)
 
-htmlSourcePath :: IOUtils -> Wish String String
-export htmlSourcePath = (ioUtils) => map(
-  mconcat($, "/index.html"),
-  madDocSrcPath(ioUtils)
-)
+htmlSourcePath :: IOUtils -> String
+export htmlSourcePath = (ioUtils) => pipe(
+  madDocSrcPath,
+  mconcat($, "/index.html")
+)(ioUtils)
 
 
 generateConfiguration :: IOUtils -> Wish String Config
-export generateConfiguration = (ioUtils) => pipe(
-  parallel,
-  map(where {
-    [madMain, sassMain, htmlIndex, sassBin, docInput, docOutput] => 
-      {
-        madlib: { input: madMain, output: JS_BUNDLE_PATH },
-        styles: { input: sassMain, output: CSS_TARGET_PATH },
-        html: { input: htmlIndex, output: HTML_TARGET_PATH },
-        sassExecutablePath: sassBin,
-        documentationDotJson: { input: docInput, output: docOutput }
-      }
+export generateConfiguration = (ioUtils) =>  do {
+  inputPath <- pathToDocument(ioUtils)
+  return of({
+    madlib: { input:  madDocMainPath(ioUtils), output: JS_BUNDLE_PATH },
+    styles: { input: sassPath(ioUtils), output: CSS_TARGET_PATH },
+    html: { input: htmlSourcePath(ioUtils), output: HTML_TARGET_PATH },
+    sassExecutablePath: sassExecutablePath(ioUtils),
+    documentationDotJson: { input: inputPath, output: documentationTargetPath(ioUtils) },
   })
-)([
-  madDocMainPath(ioUtils),
-  sassPath(ioUtils),
-  htmlSourcePath(ioUtils),
-  sassExecutablePath(ioUtils),
-  pathToDocument(ioUtils),
-  documentationTargetPath(ioUtils)
-])
+}
 
 
 generateJson :: IOUtils -> Config -> Wish String String
 export generateJson = (ioUtils, config) => pipe(
-  (c) => `madlib doc -i ${c.documentationDotJson.input} > ${c.documentationDotJson.output}`,
-  ioUtils.exec,
+  (c) => ["doc", "-i", c.documentationDotJson.input],
+  ioUtils.exec("madlib", $, Process.DEFAULT_COMMAND_OPTIONS),
   mapRej(.stderr),
   mapRej((err) =>
-  `An error occured while generating the docs, here is the error from madlib:\n${err}`
+    `An error occured while generating the docs, here is the error from madlib:\n${err}`
   ),
-  map((_) => `Documentation built and saved in '${config.documentationDotJson.output}'`)
+  chain(
+    pipe(
+      .stdout,
+      ioUtils.writeFile(config.documentationDotJson.output),
+      mapRej(always(`documentation.json file could not be saved to ${config.documentationDotJson.output}`))
+    )
+  ),
+  map(always(`Documentation built and saved in '${config.documentationDotJson.output}'`))
 )(config)
 
 
 buildBundle :: IOUtils -> Config -> Wish String String
 export buildBundle = (ioUtils) => pipe(
-  (c) => `madlib compile -i ${c.madlib.input} --target browser --bundle -o ${c.madlib.output}`,
-  ioUtils.exec,
+  (c) => ["compile", "-i", c.madlib.input, "--target", "browser", "--bundle", "-o", c.madlib.output],
+  ioUtils.exec("madlib", $, Process.DEFAULT_COMMAND_OPTIONS),
   mapRej(.stderr),
   map(.stdout)
 )
 
 buildSass :: IOUtils -> Config -> Wish String String
 export buildSass = (ioUtils) => pipe(
-  (c) => ioUtils.exec(`${c.sassExecutablePath} ${c.styles.input} ${c.styles.output}`),
+  (c) => ioUtils.exec(c.sassExecutablePath, [c.styles.input, c.styles.output], Process.DEFAULT_COMMAND_OPTIONS),
   mapRej(.stderr),
   map(.stdout)
 )
 
 copyHtml :: IOUtils -> Config -> Wish String String
 export copyHtml = (ioUtils) => pipe(
-  (c) => ioUtils.exec(`cp ${c.html.input} ${c.html.output}`),
+  (c) => ioUtils.exec("cp", [c.html.input, c.html.output], Process.DEFAULT_COMMAND_OPTIONS),
   mapRej(.stderr),
   map(.stdout)
 )
@@ -169,9 +170,9 @@ export copyHtml = (ioUtils) => pipe(
 buildDocumentation :: IOUtils -> Config -> Wish String String
 export buildDocumentation = (ioUtils, config) => pipe(
   buildBundle(ioUtils),
-  chain((_) => buildSass(ioUtils, config)),
-  chain((_) => copyHtml(ioUtils, config)),
-  chain((_) => map(mconcat($, "/.docs"), ioUtils.getCurrentPath)),
+  chain(() => buildSass(ioUtils, config)),
+  chain(() => copyHtml(ioUtils, config)),
+  chain(() => of(`${ ioUtils.getCurrentWorkingDirectory()}/.docs`)),
   map((outputPath) => `Documentation built and available in the folder '${outputPath}'`)
 )(config)
 

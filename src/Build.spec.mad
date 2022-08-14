@@ -3,6 +3,7 @@
 import { test, assertEquals, ErrorWithMessage } from "Test"
 import { bad, chainRej, mapRej } from "Wish"
 import { always } from "Function"
+import String from "String"
 
 import type { IOUtils } from "@/IOUtils"
 import type { Config } from "@/Build"
@@ -27,14 +28,15 @@ import {
 INITIAL_IOUTILS :: IOUtils
 INITIAL_IOUTILS = {
   args: [],
-  getCurrentPath: of(""),
-  getExecutablePath: of(""),
-  exec: (x) => of({ exitCode: 0, stderr: "", stdout: x})
+  writeFile: (_, _) => of({}),
+  getCurrentWorkingDirectory: () => "",
+  getExecutablePath: () => "",
+  exec: (cmd, args, _) => of({ exitCode: 0, stderr: "", stdout: `${cmd} ${String.join(" ", args)}` })
 }
 
 
 MADDOCCLI_MAIN_DOT_JS_PATH = "/home/madlib/maddoc-cli/build/src/Main.mjs"
-FIXTURE_IOUTILS = { ...INITIAL_IOUTILS, getExecutablePath: of(MADDOCCLI_MAIN_DOT_JS_PATH) }
+FIXTURE_IOUTILS = { ...INITIAL_IOUTILS, getExecutablePath: () => MADDOCCLI_MAIN_DOT_JS_PATH }
 
 
 DEFAULT_CONFIG :: Config
@@ -72,61 +74,50 @@ test("pathToDocument - arg is not set", (_) => pipe(
 
 test("madDocRootPath - should return the root of maddoc project", (_) => pipe(
   madDocRootPath,
-  mapRej((_) => ErrorWithMessage("madDocRootPath should be success")),
-  chain(assertEquals($, "/home/madlib/maddoc-cli/madlib_modules/MadDoc"))
+  assertEquals($, "/home/madlib/maddoc-cli/madlib_modules/MadDoc")
 )(FIXTURE_IOUTILS))
 
 test("madDocRootPath - should return the root of maddoc project when installed as a dependency", (_) => pipe(
   madDocRootPath,
-  mapRej((_) => ErrorWithMessage("madDocRootPath should be success")),
-  chain(assertEquals($, "/home/madlib/my-package/madlib_modules/MadDoc"))
-)({ ...INITIAL_IOUTILS, getExecutablePath: of("/home/madlib/my-package/madlib_modules/https___github_com_madlib_lang_maddoc_cli_archive_refs_heads_master_zip/.run/Main.mjs") }))
+  assertEquals($, "/home/madlib/my-package/madlib_modules/MadDoc")
+)({ ...INITIAL_IOUTILS, getExecutablePath: () => "/home/madlib/my-package/madlib_modules/https___github_com_madlib_lang_maddoc_cli_archive_refs_heads_master_zip/.run/Main.mjs" }))
 
 test("sassExecutablePath - should return the local sass install in node_modules if run locally", (_) => pipe(
   sassExecutablePath,
-  mapRej((_) => ErrorWithMessage("sassExecutablePath should be success")),
-  chain(assertEquals($, "/home/madlib/maddoc-cli/node_modules/.bin/sass"))
+  assertEquals($, "/home/madlib/maddoc-cli/node_modules/.bin/sass")
 )(FIXTURE_IOUTILS))
 
 test("sassExecutablePath - should return the local sass install in node_modules if run from a package", (_) => pipe(
   sassExecutablePath,
-  mapRej((_) => ErrorWithMessage("sassExecutablePath should be success")),
-  chain(assertEquals($, "/home/madlib/my-package/node_modules/.bin/sass"))
+  assertEquals($, "/home/madlib/my-package/node_modules/.bin/sass")
 )({
   ...INITIAL_IOUTILS,
-  getExecutablePath: of(
-    "/home/madlib/my-package/madlib_modules/MadDoc/.run/Main.mjs"
-  )
+  getExecutablePath: () => "/home/madlib/my-package/madlib_modules/MadDoc/.run/Main.mjs"
 }))
 
 test("madDocSrcPath - should return the path of the src folder from MadDoc", (_) => pipe(
   madDocSrcPath,
-  mapRej((_) => ErrorWithMessage("madDocSrcPath should be success")),
-  chain(assertEquals($, "/home/madlib/maddoc-cli/madlib_modules/MadDoc/src"))
+  assertEquals($, "/home/madlib/maddoc-cli/madlib_modules/MadDoc/src")
 )(FIXTURE_IOUTILS))
 
 test("documentationTargetPath - should return the path for the documentation.json file", (_) => pipe(
   documentationTargetPath,
-  mapRej((_) => ErrorWithMessage("documentationTargetPath should be success")),
-  chain(assertEquals($, "/home/madlib/maddoc-cli/madlib_modules/MadDoc/src/documentation.json"))
+  assertEquals($, "/home/madlib/maddoc-cli/madlib_modules/MadDoc/src/documentation.json")
 )(FIXTURE_IOUTILS))
 
 test("madDocMainPath - should return the path for the Main module of MadDoc", (_) => pipe(
   madDocMainPath,
-  mapRej((_) => ErrorWithMessage("madDocMainPath should be success")),
-  chain(assertEquals($, "/home/madlib/maddoc-cli/madlib_modules/MadDoc/src/Main.mad"))
+  assertEquals($, "/home/madlib/maddoc-cli/madlib_modules/MadDoc/src/Main.mad")
 )(FIXTURE_IOUTILS))
 
 test("sassPath - should return the path for the sass file to compile", (_) => pipe(
   sassPath,
-  mapRej((_) => ErrorWithMessage("sassPath should be success")),
-  chain(assertEquals($, "/home/madlib/maddoc-cli/madlib_modules/MadDoc/src/styles/main.scss"))
+  assertEquals($, "/home/madlib/maddoc-cli/madlib_modules/MadDoc/src/styles/main.scss")
 )(FIXTURE_IOUTILS))
 
 test("htmlSourcePath - should return the path of index.html file to copy", (_) => pipe(
   htmlSourcePath,
-  mapRej((_) => ErrorWithMessage("htmlSourcePath should be success")),
-  chain(assertEquals($, "/home/madlib/maddoc-cli/madlib_modules/MadDoc/src/index.html"))
+  assertEquals($, "/home/madlib/maddoc-cli/madlib_modules/MadDoc/src/index.html")
 )(FIXTURE_IOUTILS))
 
 test("generateConfiguration - should generate a correct Config with all paths", (_) => {
@@ -138,30 +129,30 @@ test("generateConfiguration - should generate a correct Config with all paths", 
     chain(assertEquals($, expected))
   )({
     ...INITIAL_IOUTILS,
-    getExecutablePath: of(MADDOCCLI_MAIN_DOT_JS_PATH),
+    getExecutablePath: () => MADDOCCLI_MAIN_DOT_JS_PATH,
     args: ["", "/path/to/document"]
   })
 })
 
 test("generateJson - should call 'madlib doc' command with correct options", (_) => {
   command = ""
-  expected = "madlib doc -i /path/to/document > /home/madlib/maddoc-cli/madlib_modules/MadDoc/src/documentation.json"
+  expected = "madlib doc -i /path/to/document"
 
-  execRecorder = (cmd) => {
-    command = cmd
+  execRecorder = (cmd, args, _) => {
+    command = `${cmd} ${String.join(" ", args)}`
     return of({ exitCode: 0, stderr: "", stdout: "good"})
   }
 
   return pipe(
     generateJson({ ...INITIAL_IOUTILS, exec: execRecorder }),
-    mapRej((_) => ErrorWithMessage("generateJson should be success")),
-    chain((_) => assertEquals(command, expected))
+    mapRej(() => ErrorWithMessage("generateJson should be success")),
+    chain(() => assertEquals(command, expected))
   )(DEFAULT_CONFIG)
 })
 
 test("generateJson - should reject if 'madlib doc' command fails", (_) => {
   expected = "An error occured while generating the docs, here is the error from madlib:\nCould not generate doc"
-  execRecorder = (cmd) => bad({ exitCode: 1, stderr: "Could not generate doc", stdout: "" })
+  execRecorder = (cmd, _, _) => bad({ exitCode: 1, stderr: "Could not generate doc", stdout: "" })
 
   return pipe(
     generateJson({ ...INITIAL_IOUTILS, exec: execRecorder }),
@@ -174,8 +165,8 @@ test("buildBundle - should call the madlib compiler with correct options", (_) =
   command = ""
   expected = "madlib compile -i /home/madlib/maddoc-cli/madlib_modules/MadDoc/src/Main.mad --target browser --bundle -o .docs/bundle.js"
 
-  execRecorder = (cmd) => {
-    command = cmd
+  execRecorder = (cmd, args, _) => {
+    command = `${cmd} ${String.join(" ", args)}`
     return of({ exitCode: 0, stderr: "", stdout: "good"})
   }
 
@@ -188,7 +179,7 @@ test("buildBundle - should call the madlib compiler with correct options", (_) =
 
 test("buildBundle - should reject if 'madlib compile' command fails", (_) => {
   expected = "Compilation error"
-  execRecorder = (cmd) => bad({ exitCode: 1, stderr: "Compilation error", stdout: "" })
+  execRecorder = (_, _, _) => bad({ exitCode: 1, stderr: "Compilation error", stdout: "" })
 
   return pipe(
     buildBundle({ ...INITIAL_IOUTILS, exec: execRecorder }),
@@ -201,8 +192,8 @@ test("buildSass - should call the sass executable with correct options", (_) => 
   command = ""
   expected = "/home/madlib/maddoc-cli/node_modules/.bin/sass /home/madlib/maddoc-cli/madlib_modules/MadDoc/src/styles/main.scss .docs/styles/main.css"
 
-  execRecorder = (cmd) => {
-    command = cmd
+  execRecorder = (cmd, args, _) => {
+    command = `${cmd} ${String.join(" ", args)}`
     return of({ exitCode: 0, stderr: "", stdout: "good"})
   }
 
@@ -215,7 +206,7 @@ test("buildSass - should call the sass executable with correct options", (_) => 
 
 test("buildSass - should reject if 'sass' command fails", (_) => {
   expected = "Sass error"
-  execRecorder = (cmd) => bad({ exitCode: 1, stderr: "Sass error", stdout: "" })
+  execRecorder = (_, _, _) => bad({ exitCode: 1, stderr: "Sass error", stdout: "" })
 
   return pipe(
     buildSass({ ...INITIAL_IOUTILS, exec: execRecorder }),
@@ -228,8 +219,8 @@ test("copyHtml - should call 'cp' with correct options", (_) => {
   command = ""
   expected = "cp /home/madlib/maddoc-cli/madlib_modules/MadDoc/src/index.html .docs/index.html"
 
-  execRecorder = (cmd) => {
-    command = cmd
+  execRecorder = (cmd, args, _) => {
+    command = `${cmd} ${String.join(" ", args)}`
     return of({ exitCode: 0, stderr: "", stdout: "good"})
   }
 
@@ -242,7 +233,7 @@ test("copyHtml - should call 'cp' with correct options", (_) => {
 
 test("copyHtml - should reject if 'cp' command fails", (_) => {
   expected = "cp error"
-  execRecorder = (cmd) => bad({ exitCode: 1, stderr: "cp error", stdout: "" })
+  execRecorder = (_, _, _) => bad({ exitCode: 1, stderr: "cp error", stdout: "" })
 
   return pipe(
     copyHtml({ ...INITIAL_IOUTILS, exec: execRecorder }),
@@ -259,8 +250,9 @@ test("buildDocumentation", (_) => {
     "cp /home/madlib/maddoc-cli/madlib_modules/MadDoc/src/index.html .docs/index.html"
   ]
 
-  execRecorder = (cmd) => {
-    commands = mconcat(commands, [cmd])
+  execRecorder = (cmd, args, _) => {
+    command = `${cmd} ${String.join(" ", args)}`
+    commands = mconcat(commands, [command])
     return of({ exitCode: 0, stderr: "", stdout: "good"})
   }
 

@@ -3,7 +3,7 @@
 import type { AssertionError } from "Test"
 import { test, AssertionError } from "Test"
 import { exists } from "File"
-import { exec } from "Process"
+import Process from "Process"
 import type { Wish } from "Wish"
 import { mapRej } from "Wish"
 import { andDo } from "Monad"
@@ -24,7 +24,7 @@ test(
     andDo(assertFileExists(".docs/bundle.js")),
     andDo(assertFileExists(".docs/index.html")),
     andDo(assertFileExists(".docs/styles/main.css"))
-  )(exec("madlib run ./src/Main.mad src"))
+  )(Process.exec("madlib", ["run", "./src/Main.mad", "src"], Process.DEFAULT_COMMAND_OPTIONS))
 )
 
 #endif
