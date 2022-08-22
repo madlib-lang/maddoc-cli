@@ -16,18 +16,22 @@ import {
 
 
 
-main :: Config -> Wish String String
-main = (config) => pipe(
+run :: Config -> Wish String String
+run = (config) => pipe(
   generateJson(defaultIOUtils),
   andDo(buildDocumentation(defaultIOUtils, config))
 )(config)
 
-fulfill(
-  IO.log,
-  (path) => IO.log(`Running documentation generation for the madlib modules in '${path}'`),
-  pathToDocument(defaultIOUtils)
-)
 
-fulfill(IO.trace("err"), IO.trace("good"), chain(main, generateConfiguration(defaultIOUtils)))
+main :: List String -> {}
+main = () => {
+  fulfill(
+    IO.log,
+    (path) => IO.log(`Running documentation generation for the madlib modules in '${path}'`),
+    pathToDocument(defaultIOUtils)
+  )
+
+  fulfill(IO.trace("err"), IO.trace("good"), chain(run, generateConfiguration(defaultIOUtils)))
+}
 
 #endif
