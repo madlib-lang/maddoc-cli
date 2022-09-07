@@ -1,12 +1,3 @@
 # MadDoc CLI
-
-## How to run it
-```bash
-npm i
-madlib install
-npm run dev
-
-madlib run src/CLI/Main.mad FOLDER
-```
-Where `FOLDER` is the location of the sources you want to generate a documentation for.
-The generated documentation site is then saved in the `.docs` folder.
+[![build](https://github.com/madlib-lang/maddoc-cli/actions/workflows/build.yml/badge.svg)](https://github.com/madlib-lang/maddoc-cli/actions/workflows/build.yml)
+[![Coverage Status](https://coveralls.io/repos/github/madlib-lang/maddoc-cli/badge.svg?branch=master)](https://coveralls.io/github/madlib-lang/maddoc-cli?branch=master)

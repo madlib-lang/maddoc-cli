@@ -1,0 +1,33 @@
+on: [push]
+
+env:
+  node-version: 14.x
+
+name: build
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Setup Node.js ${{ env.node-version }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ env.node-version }}
+
+      - name: Install Madlib
+        run: npm install -g @madlib-lang/madlib@0.15.1
+
+      - name: Display Madlib version
+        run: madlib -v
+
+      - name: Run tests
+        run: madlib test --coverage
+
+      - name: Push coverage to Coveralls
+        uses: coverallsapp/github-action@master
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path-to-lcov: .coverage/lcov.info
