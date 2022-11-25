@@ -3,7 +3,7 @@
 import type { Wish } from "Wish"
 import { bad, mapRej } from "Wish"
 import { Just, Nothing } from "Maybe"
-import { nth, dropLast, intercalate, last, reduce } from "List"
+import { nth, dropLast, intersperse, last, reduce } from "List"
 import { split } from "String"
 import type { IOUtils } from "@/IOUtils"
 import Process from "Process"
@@ -40,7 +40,7 @@ parentPath :: Integer -> String -> String
 parentPath = (levelsUp, path) => pipe(
   split("/"),
   dropLast(levelsUp),
-  intercalate(["/"]),
+  intersperse("/"),
   reduce(mconcat, "")
 )(path)
 
