@@ -1,25 +1,22 @@
 #iftarget js
 
+import type { Wish } from "Wish"
+
+import type { Config } from "@/Build"
+
 import IO from "IO"
 import { andDo } from "Monad"
-import type { Wish } from "Wish"
 import { fulfill } from "Wish"
 
+import { buildDocumentation, generateConfiguration, generateJson, pathToDocument } from "@/Build"
 import { defaultIOUtils } from "@/IOUtils"
-import type { Config } from "@/Build"
-import {
-  buildDocumentation,
-  generateConfiguration,
-  pathToDocument,
-  generateJson
-} from "@/Build"
 
 
 
 run :: Config -> Wish String String
 run = (config) => pipe(
   generateJson(defaultIOUtils),
-  andDo(buildDocumentation(defaultIOUtils, config))
+  andDo(buildDocumentation(defaultIOUtils, config)),
 )(config)
 
 
@@ -28,10 +25,18 @@ main = () => {
   fulfill(
     IO.log,
     (path) => IO.log(`Running documentation generation for the madlib modules in '${path}'`),
-    pathToDocument(defaultIOUtils)
+    pathToDocument(defaultIOUtils),
   )
 
-  fulfill(IO.trace("err"), IO.trace("good"), chain(run, generateConfiguration(defaultIOUtils)))
+  fulfill(
+    (e) => {
+      IO.trace("err", e)
+    },
+    (x) => {
+      IO.trace("good", x)
+    },
+    chain(run, generateConfiguration(defaultIOUtils)),
+  )
 }
 
 #endif
