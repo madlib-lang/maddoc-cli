@@ -40,15 +40,13 @@ CSS_TARGET_PATH = ".docs/styles/main.css"
 HTML_TARGET_PATH :: String
 HTML_TARGET_PATH = ".docs/index.html"
 
-append :: String -> String -> String
-append = (a, b) => a ++ b
 
 parentPath :: Integer -> String -> String
 parentPath = (levelsUp, path) => pipe(
   split("/"),
   dropLast(levelsUp),
   intersperse("/"),
-  reduce(append, ""),
+  reduce(mappend, ""),
 )(path)
 
 pathToDocument :: IOUtils -> Wish String String
@@ -92,31 +90,31 @@ export sassExecutablePath = (ioUtils) => pipe(
 madDocSrcPath :: IOUtils -> String
 export madDocSrcPath = (ioUtils) => pipe(
   madDocRootPath,
-  append($, "/src"),
+  mappend($, "/src"),
 )(ioUtils)
 
 documentationTargetPath :: IOUtils -> String
 export documentationTargetPath = (ioUtils) => pipe(
   madDocSrcPath,
-  append($, "/documentation.json"),
+  mappend($, "/documentation.json"),
 )(ioUtils)
 
 madDocMainPath :: IOUtils -> String
 export madDocMainPath = (ioUtils) => pipe(
   madDocSrcPath,
-  append($, "/Main.mad"),
+  mappend($, "/Main.mad"),
 )(ioUtils)
 
 sassPath :: IOUtils -> String
 export sassPath = (ioUtils) => pipe(
   madDocSrcPath,
-  append($, "/styles/main.scss"),
+  mappend($, "/styles/main.scss"),
 )(ioUtils)
 
 htmlSourcePath :: IOUtils -> String
 export htmlSourcePath = (ioUtils) => pipe(
   madDocSrcPath,
-  append($, "/index.html"),
+  mappend($, "/index.html"),
 )(ioUtils)
 
 
