@@ -1,23 +1,28 @@
 #iftarget js
 
 import type { Wish } from "Wish"
-import { bad, mapRej } from "Wish"
-import { Just, Nothing } from "Maybe"
-import { nth, dropLast, intersperse, last, reduce } from "List"
-import { split } from "String"
+
 import type { IOUtils } from "@/IOUtils"
-import Process from "Process"
+
 import { always } from "Function"
+import {} from "IO"
+import {} from "List"
+import { dropLast, intersperse, last, nth, reduce } from "List"
+import { Just, Nothing } from "Maybe"
+import Process from "Process"
+import { split } from "String"
+import { bad, mapRej } from "Wish"
+
 
 
 alias InputOutput = { input :: String, output :: String }
 
 export alias Config = {
-  madlib               :: InputOutput,
-  styles               :: InputOutput,
-  html                 :: InputOutput,
-  sassExecutablePath   :: String,
-  documentationDotJson :: InputOutput
+  documentationDotJson :: InputOutput,
+  html :: InputOutput,
+  madlib :: InputOutput,
+  sassExecutablePath :: String,
+  styles :: InputOutput,
 }
 
 MADDOC_PACKAGE_FOLDER :: String
@@ -35,13 +40,15 @@ CSS_TARGET_PATH = ".docs/styles/main.css"
 HTML_TARGET_PATH :: String
 HTML_TARGET_PATH = ".docs/index.html"
 
+append :: String -> String -> String
+append = (a, b) => a ++ b
 
 parentPath :: Integer -> String -> String
 parentPath = (levelsUp, path) => pipe(
   split("/"),
   dropLast(levelsUp),
   intersperse("/"),
-  reduce(mconcat, "")
+  reduce(append, ""),
 )(path)
 
 pathToDocument :: IOUtils -> Wish String String
@@ -52,9 +59,9 @@ export pathToDocument = pipe(
     Just(path) =>
       of(path)
 
-    Nothing   =>
+    Nothing =>
       bad("You must give a path to the .mad files to document!")
-  }
+  },
 )
 
 
@@ -72,52 +79,52 @@ export madDocRootPath = (ioUtils) => {
 
       _ =>
         `${parentPath(3, exePath)}/${MADLIB_MODULES_FOLDER}/${MADDOC_PACKAGE_FOLDER}`
-    }
+    },
   )(exePath)
 }
 
 sassExecutablePath :: IOUtils -> String
 export sassExecutablePath = (ioUtils) => pipe(
   madDocRootPath,
-  (rootPath) => `${parentPath(2, rootPath)}/node_modules/.bin/sass`
+  (rootPath) => `${parentPath(2, rootPath)}/node_modules/.bin/sass`,
 )(ioUtils)
 
 madDocSrcPath :: IOUtils -> String
 export madDocSrcPath = (ioUtils) => pipe(
   madDocRootPath,
-  mconcat($, "/src")
+  append($, "/src"),
 )(ioUtils)
 
 documentationTargetPath :: IOUtils -> String
 export documentationTargetPath = (ioUtils) => pipe(
   madDocSrcPath,
-  mconcat($, "/documentation.json")
+  append($, "/documentation.json"),
 )(ioUtils)
 
 madDocMainPath :: IOUtils -> String
 export madDocMainPath = (ioUtils) => pipe(
   madDocSrcPath,
-  mconcat($, "/Main.mad")
+  append($, "/Main.mad"),
 )(ioUtils)
 
 sassPath :: IOUtils -> String
 export sassPath = (ioUtils) => pipe(
   madDocSrcPath,
-  mconcat($, "/styles/main.scss")
+  append($, "/styles/main.scss"),
 )(ioUtils)
 
 htmlSourcePath :: IOUtils -> String
 export htmlSourcePath = (ioUtils) => pipe(
   madDocSrcPath,
-  mconcat($, "/index.html")
+  append($, "/index.html"),
 )(ioUtils)
 
 
 generateConfiguration :: IOUtils -> Wish String Config
-export generateConfiguration = (ioUtils) =>  do {
+export generateConfiguration = (ioUtils) => do {
   inputPath <- pathToDocument(ioUtils)
   return of({
-    madlib: { input:  madDocMainPath(ioUtils), output: JS_BUNDLE_PATH },
+    madlib: { input: madDocMainPath(ioUtils), output: JS_BUNDLE_PATH },
     styles: { input: sassPath(ioUtils), output: CSS_TARGET_PATH },
     html: { input: htmlSourcePath(ioUtils), output: HTML_TARGET_PATH },
     sassExecutablePath: sassExecutablePath(ioUtils),
@@ -131,40 +138,57 @@ export generateJson = (ioUtils, config) => pipe(
   (c) => ["doc", "-i", c.documentationDotJson.input],
   ioUtils.exec("madlib", $, Process.DEFAULT_COMMAND_OPTIONS),
   mapRej(.stderr),
-  mapRej((err) =>
-    `An error occured while generating the docs, here is the error from madlib:\n${err}`
+  mapRej(
+    (err) => `An error occured while generating the docs, here is the error from madlib:\n${err}`,
   ),
   chain(
     pipe(
       .stdout,
       ioUtils.writeFile(config.documentationDotJson.output),
-      mapRej(always(`documentation.json file could not be saved to ${config.documentationDotJson.output}`))
-    )
+      mapRej(
+        always(
+          `documentation.json file could not be saved to ${config.documentationDotJson.output}`,
+        ),
+      ),
+    ),
   ),
-  map(always(`Documentation built and saved in '${config.documentationDotJson.output}'`))
+  map(always(`Documentation built and saved in '${config.documentationDotJson.output}'`)),
 )(config)
 
 
 buildBundle :: IOUtils -> Config -> Wish String String
 export buildBundle = (ioUtils) => pipe(
-  (c) => ["compile", "-i", c.madlib.input, "--target", "browser", "--bundle", "-o", c.madlib.output],
+  (c) => [
+    "compile",
+    "-i",
+    c.madlib.input,
+    "--target",
+    "browser",
+    "--bundle",
+    "-o",
+    c.madlib.output,
+  ],
   ioUtils.exec("madlib", $, Process.DEFAULT_COMMAND_OPTIONS),
   mapRej(.stderr),
-  map(.stdout)
+  map(.stdout),
 )
 
 buildSass :: IOUtils -> Config -> Wish String String
 export buildSass = (ioUtils) => pipe(
-  (c) => ioUtils.exec(c.sassExecutablePath, [c.styles.input, c.styles.output], Process.DEFAULT_COMMAND_OPTIONS),
+  (c) => ioUtils.exec(
+    c.sassExecutablePath,
+    [c.styles.input, c.styles.output],
+    Process.DEFAULT_COMMAND_OPTIONS,
+  ),
   mapRej(.stderr),
-  map(.stdout)
+  map(.stdout),
 )
 
 copyHtml :: IOUtils -> Config -> Wish String String
 export copyHtml = (ioUtils) => pipe(
   (c) => ioUtils.exec("cp", [c.html.input, c.html.output], Process.DEFAULT_COMMAND_OPTIONS),
   mapRej(.stderr),
-  map(.stdout)
+  map(.stdout),
 )
 
 buildDocumentation :: IOUtils -> Config -> Wish String String
@@ -172,8 +196,8 @@ export buildDocumentation = (ioUtils, config) => pipe(
   buildBundle(ioUtils),
   chain(() => buildSass(ioUtils, config)),
   chain(() => copyHtml(ioUtils, config)),
-  chain(() => of(`${ ioUtils.getCurrentWorkingDirectory()}/.docs`)),
-  map((outputPath) => `Documentation built and available in the folder '${outputPath}'`)
+  chain(() => of(`${ioUtils.getCurrentWorkingDirectory()}/.docs`)),
+  map((outputPath) => `Documentation built and available in the folder '${outputPath}'`),
 )(config)
 
 #endif
