@@ -1,10 +1,13 @@
 #iftarget js
 
-import type { Config } from "@/Build"
-import type { IOUtils } from "@/IOUtils"
 import type { Wish } from "Wish"
 
+import type { Config } from "@/Build"
+import type { IOUtils } from "@/IOUtils"
+
+import FilePath from "FilePath"
 import { always } from "Function"
+import Process from "Process"
 import String from "String"
 import { ErrorWithMessage, assertEquals, test } from "Test"
 import { bad, chainRej, mapRej } from "Wish"
@@ -41,29 +44,26 @@ INITIAL_IOUTILS = {
   }),
 }
 
+local :: String -> String
+local = (str) => FilePath.joinPath([Process.getCurrentWorkingDirectory(), str])
 
-MADDOCCLI_MAIN_DOT_JS_PATH = "/home/madlib/maddoc-cli/build/src/Main.mjs"
+
+MADDOCCLI_MAIN_DOT_JS_PATH = local("build/src/Main.mjs")
 FIXTURE_IOUTILS = { ...INITIAL_IOUTILS, getExecutablePath: () => MADDOCCLI_MAIN_DOT_JS_PATH }
 
 
 DEFAULT_CONFIG :: Config
 DEFAULT_CONFIG = {
-  madlib: {
-    input: "/home/madlib/maddoc-cli/madlib_modules/MadDoc/src/Main.mad",
-    output: ".docs/bundle.js",
-  },
+  madlib: { input: local("madlib_modules/MadDoc/src/Main.mad"), output: ".docs/bundle.js" },
   styles: {
-    input: "/home/madlib/maddoc-cli/madlib_modules/MadDoc/src/styles/main.scss",
+    input: local("madlib_modules/MadDoc/src/styles/main.scss"),
     output: ".docs/styles/main.css",
   },
-  html: {
-    input: "/home/madlib/maddoc-cli/madlib_modules/MadDoc/src/index.html",
-    output: ".docs/index.html",
-  },
-  sassExecutablePath: "/home/madlib/maddoc-cli/node_modules/.bin/sass",
+  html: { input: local("madlib_modules/MadDoc/src/index.html"), output: ".docs/index.html" },
+  sassExecutablePath: local("node_modules/.bin/sass"),
   documentationDotJson: {
     input: "/path/to/document",
-    output: "/home/madlib/maddoc-cli/madlib_modules/MadDoc/src/documentation.json",
+    output: local("madlib_modules/MadDoc/src/documentation.json"),
   },
 }
 
@@ -89,7 +89,7 @@ test(
   "madDocRootPath - should return the root of maddoc project",
   () => pipe(
     madDocRootPath,
-    assertEquals($, "/home/madlib/maddoc-cli/madlib_modules/MadDoc"),
+    assertEquals($, local("madlib_modules/MadDoc")),
   )(FIXTURE_IOUTILS),
 )
 
@@ -110,7 +110,7 @@ test(
   "sassExecutablePath - should return the local sass install in node_modules if run locally",
   () => pipe(
     sassExecutablePath,
-    assertEquals($, "/home/madlib/maddoc-cli/node_modules/.bin/sass"),
+    assertEquals($, local("node_modules/.bin/sass")),
   )(FIXTURE_IOUTILS),
 )
 
@@ -129,7 +129,7 @@ test(
   "madDocSrcPath - should return the path of the src folder from MadDoc",
   () => pipe(
     madDocSrcPath,
-    assertEquals($, "/home/madlib/maddoc-cli/madlib_modules/MadDoc/src"),
+    assertEquals($, local("madlib_modules/MadDoc/src")),
   )(FIXTURE_IOUTILS),
 )
 
@@ -137,7 +137,7 @@ test(
   "documentationTargetPath - should return the path for the documentation.json file",
   () => pipe(
     documentationTargetPath,
-    assertEquals($, "/home/madlib/maddoc-cli/madlib_modules/MadDoc/src/documentation.json"),
+    assertEquals($, local("madlib_modules/MadDoc/src/documentation.json")),
   )(FIXTURE_IOUTILS),
 )
 
@@ -145,7 +145,7 @@ test(
   "madDocMainPath - should return the path for the Main module of MadDoc",
   () => pipe(
     madDocMainPath,
-    assertEquals($, "/home/madlib/maddoc-cli/madlib_modules/MadDoc/src/Main.mad"),
+    assertEquals($, local("madlib_modules/MadDoc/src/Main.mad")),
   )(FIXTURE_IOUTILS),
 )
 
@@ -153,7 +153,7 @@ test(
   "sassPath - should return the path for the sass file to compile",
   () => pipe(
     sassPath,
-    assertEquals($, "/home/madlib/maddoc-cli/madlib_modules/MadDoc/src/styles/main.scss"),
+    assertEquals($, local("madlib_modules/MadDoc/src/styles/main.scss")),
   )(FIXTURE_IOUTILS),
 )
 
@@ -161,7 +161,7 @@ test(
   "htmlSourcePath - should return the path of index.html file to copy",
   () => pipe(
     htmlSourcePath,
-    assertEquals($, "/home/madlib/maddoc-cli/madlib_modules/MadDoc/src/index.html"),
+    assertEquals($, local("madlib_modules/MadDoc/src/index.html")),
   )(FIXTURE_IOUTILS),
 )
 
@@ -189,11 +189,11 @@ test(
     expected = "madlib doc -i /path/to/document"
 
     execRecorder :: String
-    -> List String
-    -> a
-    -> Wish e { exitCode :: b, stderr :: String, stdout :: String }
+      -> List String
+      -> a
+      -> Wish e { exitCode :: b, stderr :: String, stdout :: String }
     execRecorder = (cmd, args, _) => {
-      command = `${cmd} ${String.join(" ", args)}`
+      command := `${cmd} ${String.join(" ", args)}`
       return of({ exitCode: 0, stderr: "", stdout: "good" })
     }
 
@@ -223,14 +223,16 @@ test(
   "buildBundle - should call the madlib compiler with correct options",
   () => {
     command = ""
-    expected = "madlib compile -i /home/madlib/maddoc-cli/madlib_modules/MadDoc/src/Main.mad --target browser --bundle -o .docs/bundle.js"
+    expected = `madlib compile -i ${
+      local("madlib_modules/MadDoc/src/Main.mad")
+    } --target browser --bundle -o .docs/bundle.js`
 
     execRecorder :: String
-    -> List String
-    -> a
-    -> Wish e { exitCode :: b, stderr :: String, stdout :: String }
+      -> List String
+      -> a
+      -> Wish e { exitCode :: b, stderr :: String, stdout :: String }
     execRecorder = (cmd, args, _) => {
-      command = `${cmd} ${String.join(" ", args)}`
+      command := `${cmd} ${String.join(" ", args)}`
       return of({ exitCode: 0, stderr: "", stdout: "good" })
     }
 
@@ -260,14 +262,18 @@ test(
   "buildSass - should call the sass executable with correct options",
   () => {
     command = ""
-    expected = "/home/madlib/maddoc-cli/node_modules/.bin/sass /home/madlib/maddoc-cli/madlib_modules/MadDoc/src/styles/main.scss .docs/styles/main.css"
+    expected = local(
+      `node_modules/.bin/sass ${
+        local("madlib_modules/MadDoc/src/styles/main.scss")
+      } .docs/styles/main.css`,
+    )
 
     execRecorder :: String
-    -> List String
-    -> a
-    -> Wish e { exitCode :: b, stderr :: String, stdout :: String }
+      -> List String
+      -> a
+      -> Wish e { exitCode :: b, stderr :: String, stdout :: String }
     execRecorder = (cmd, args, _) => {
-      command = `${cmd} ${String.join(" ", args)}`
+      command := `${cmd} ${String.join(" ", args)}`
       return of({ exitCode: 0, stderr: "", stdout: "good" })
     }
 
@@ -297,14 +303,14 @@ test(
   "copyHtml - should call 'cp' with correct options",
   () => {
     command = ""
-    expected = "cp /home/madlib/maddoc-cli/madlib_modules/MadDoc/src/index.html .docs/index.html"
+    expected = `cp ${local("madlib_modules/MadDoc/src/index.html")} .docs/index.html`
 
     execRecorder :: String
-    -> List String
-    -> a
-    -> Wish e { exitCode :: b, stderr :: String, stdout :: String }
+      -> List String
+      -> a
+      -> Wish e { exitCode :: b, stderr :: String, stdout :: String }
     execRecorder = (cmd, args, _) => {
-      command = `${cmd} ${String.join(" ", args)}`
+      command := `${cmd} ${String.join(" ", args)}`
       return of({ exitCode: 0, stderr: "", stdout: "good" })
     }
 
@@ -335,18 +341,22 @@ test(
   () => {
     commands = []
     expected = [
-      "madlib compile -i /home/madlib/maddoc-cli/madlib_modules/MadDoc/src/Main.mad --target browser --bundle -o .docs/bundle.js",
-      "/home/madlib/maddoc-cli/node_modules/.bin/sass /home/madlib/maddoc-cli/madlib_modules/MadDoc/src/styles/main.scss .docs/styles/main.css",
-      "cp /home/madlib/maddoc-cli/madlib_modules/MadDoc/src/index.html .docs/index.html",
+      `madlib compile -i ${
+        local("madlib_modules/MadDoc/src/Main.mad")
+      } --target browser --bundle -o .docs/bundle.js`,
+      `${local("node_modules/.bin/sass")} ${
+        local("madlib_modules/MadDoc/src/styles/main.scss")
+      } .docs/styles/main.css`,
+      `cp ${local("madlib_modules/MadDoc/src/index.html")} .docs/index.html`,
     ]
 
     execRecorder :: String
-    -> List String
-    -> a
-    -> Wish e { exitCode :: b, stderr :: String, stdout :: String }
+      -> List String
+      -> a
+      -> Wish e { exitCode :: b, stderr :: String, stdout :: String }
     execRecorder = (cmd, args, _) => {
       command = `${cmd} ${String.join(" ", args)}`
-      commands = mconcat(commands, [command])
+      commands := mappend(commands, [command])
       return of({ exitCode: 0, stderr: "", stdout: "good" })
     }
 

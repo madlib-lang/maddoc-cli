@@ -1,7 +1,7 @@
 on: [push]
 
 env:
-  node-version: 14.x
+  node-version: 20.x
 
 name: build
 
@@ -10,18 +10,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Setup Node.js ${{ env.node-version }}
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ env.node-version }}
 
       - name: Install Madlib
-        run: npm install -g @madlib-lang/madlib@0.15.1
+        run: npm install -g @madlib-lang/madlib@0.23.13
 
       - name: Display Madlib version
         run: madlib -v
+
+      - name: Install Madlib Modules
+        run: madlib install
+
+      - name: Generate .docs
+        run: mkdir .docs
 
       - name: Run tests
         run: madlib test --coverage
