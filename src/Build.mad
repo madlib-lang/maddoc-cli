@@ -4,7 +4,6 @@ import type { Wish } from "Wish"
 import type { IOUtils } from "@/IOUtils"
 
 import { always } from "Function"
-import IO from "IO"
 import { dropLast, intersperse, last, nth, reduce } from "List"
 import { Just, Nothing } from "Maybe"
 import Process from "Process"
@@ -165,10 +164,6 @@ export buildBundle = (ioUtils) => pipe(
     "-o",
     c.madlib.output,
   ],
-  (x) => {
-    IO.putLine(`madlib ${String.join(" ", x)}`)
-    return x
-  },
   ioUtils.exec("madlib", $, Process.DEFAULT_COMMAND_OPTIONS),
   mapRej(.stderr),
   map(.stdout),
