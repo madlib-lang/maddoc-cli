@@ -1,30 +1,38 @@
 #iftarget js
-
 import type { AssertionError } from "Test"
-import { test, AssertionError } from "Test"
-import { exists } from "File"
-import Process from "Process"
 import type { Wish } from "Wish"
-import { mapRej } from "Wish"
-import { andDo } from "Monad"
-import { always } from "Function"
 
-assertFileExists :: String -> Wish (AssertionError String) {}
+import { exists } from "File"
+import { always } from "Function"
+import IO from "IO"
+import { andDo } from "Monad"
+import Process from "Process"
+import { AssertionError, test } from "Test"
+import { mapRej } from "Wish"
+
+
+
+assertFileExists :: String -> Wish AssertionError {}
 assertFileExists = (filePath) => pipe(
   exists,
   mapRej((_) => AssertionError("OK", `${filePath} not found`)),
-  map(always({}))
+  map(always({})),
 )(filePath)
 
 test(
   "MadDoc cli should work",
   () => pipe(
-    mapRej((_) => AssertionError("OK", "maddoc exited with non 0 code")),
+    mapRej(
+      (raw) => do {
+        IO.pTrace("...", raw.stderr)
+        return AssertionError("OK", "maddoc exited with non 0 code")
+      },
+    ),
     andDo(assertFileExists("./madlib_modules/MadDoc/src/documentation.json")),
     andDo(assertFileExists(".docs/bundle.js")),
     andDo(assertFileExists(".docs/index.html")),
-    andDo(assertFileExists(".docs/styles/main.css"))
-  )(Process.exec("madlib", ["run", "./src/Main.mad", "src"], Process.DEFAULT_COMMAND_OPTIONS))
+    andDo(assertFileExists(".docs/styles/main.css")),
+  )(Process.exec("madlib", ["run", "./src/Main.mad", "src"], Process.DEFAULT_COMMAND_OPTIONS)),
 )
 
 #endif
