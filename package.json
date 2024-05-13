@@ -1,6 +1,6 @@
 {
   "name": "maddoc-cli",
-  "version": "0.0.9",
+  "version": "0.0.11",
   "description": "A Madlib tool for generating documentation!",
   "bin": "build/src/maddoc-cli.js",
   "dependencies": {
