@@ -18,7 +18,7 @@ jobs:
           node-version: ${{ env.node-version }}
 
       - name: Install Madlib
-        run: npm install -g @madlib-lang/madlib@0.23.13
+        run: npm install -g @madlib-lang/madlib@0.23.14
 
       - name: Display Madlib version
         run: madlib -v
